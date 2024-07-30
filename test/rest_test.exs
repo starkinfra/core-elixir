@@ -785,6 +785,78 @@ defmodule StarkCoreTestRest.PostSingle do
   end
 end
 
+defmodule StarkCoreTestRest.DeleteRaw do
+  alias StarkCore.Utils.Rest
+  alias StarkBank.Boleto
+  use ExUnit.Case
+
+  setup do
+    {:ok, created_boleto} = Rest.post(
+      :bank,
+      Boleto.resource(),
+      %{
+        payload: %{
+          boletos: [%{
+            amount: 15000,
+            taxId: "45.059.493/0001-73",
+            name: "Should create a new Invoice using Rest.post",
+            streetLine1: "Rua Lagoa Panema, 145",
+            streetLine2: "Casa 2",
+            district: "Bela Vista",
+            city: "São Paulo",
+            stateCode: "SP",
+            zipCode: "02051-050"
+          }]
+        }
+      }
+    )
+
+    {:ok, [boleto: created_boleto |> hd]}
+  end
+
+  @tag :delete
+  test "Should delete the created Boleto by its ID using delete_raw", state do
+    assert {:ok, _deleted_response} = Rest.delete_raw(
+      :bank,
+      "boleto",
+      state[:boleto].id,
+      %{}
+    )
+  end
+
+  @tag :delete
+  test "Should delete the created Boleto by its ID using delete_raw!", state do
+    assert Rest.delete_raw!(
+      :bank,
+      "boleto",
+      state[:boleto].id,
+      %{}
+    )
+  end
+
+  @tag :delete_fail
+  test "Should silently fail trying delete a Boleto using delete_raw with an INVALID_ID" do
+    assert {:error, _deleted_response} = Rest.delete_raw(
+      :bank,
+      "boleto",
+      "INVALID_ID",
+      %{}
+    )
+  end
+
+  @tag :delete_fail
+  test "Should raise error when trying delete a Boleto using delete_raw! with an INVALID_ID" do
+    assert_raise RuntimeError, fn ->
+      Rest.delete_raw!(
+        :bank,
+        "boleto",
+        "INVALID_ID",
+        %{}
+      )
+    end
+  end
+end
+
 defmodule StarkCoreTestRest.Delete do
   alias StarkCore.Utils.Rest
   alias StarkBank.Boleto
@@ -931,6 +1003,92 @@ defmodule StarkCoreTestRest.PatchId do
       Rest.patch_id!(
         :bank,
         Invoice.resource(),
+        "INVALID_ID",
+        %{
+          payload: %{
+            amount: 20000,
+            expiration: 3600
+          }
+        }
+      )
+    end
+  end
+end
+
+defmodule StarkCoreTestRest.PatchRaw do
+  alias StarkCore.Utils.Rest
+  alias StarkBank.Invoice
+  use ExUnit.Case
+
+  setup do
+    {:ok, created_invoice} = Rest.post(
+      :bank,
+      Invoice.resource(),
+      %{
+        payload: %{
+          invoices: [%{
+            amount: 15000,
+            taxId: "45.059.493/0001-73",
+            name: "Should create a new Invoice using Rest.post"
+          }]
+        }
+      }
+    )
+
+    {:ok, [invoice: created_invoice |> hd]}
+  end
+
+  @tag :patch_raw
+  test "Should patch Invoice by its ID using patch_raw", state do
+    assert {:ok, _response} = Rest.patch_raw(
+      :bank,
+      "invoice",
+      state[:invoice].id,
+      %{
+        payload: %{
+          amount: 20000,
+          expiration: 3600
+        }
+      }
+    )
+  end
+
+  @tag :patch
+  test "Should patch Invoice by its ID using patch_raw!", state do
+    assert Rest.patch_raw!(
+      :bank,
+      "invoice",
+      state[:invoice].id,
+      %{
+        payload: %{
+          amount: 20000,
+          expiration: 3600
+        }
+      }
+    )
+  end
+
+  @tag :patch_fail
+  test "Should silently fail patch Invoice using patch_raw with INVALID_ID" do
+    assert {:error, _response} = Rest.patch_raw(
+      :bank,
+      "invoice",
+      "INVALID_ID",
+      %{
+        payload: %{
+          amount: 20000,
+          expiration: 3600
+        }
+      }
+    )
+  end
+
+  @tag :patch_fail
+  test "Should raise error trying to patch Invoice using patch_raw! with INVALID_ID" do
+    assert_raise RuntimeError, fn ->
+      Rest.patch_raw!(
+        :bank,
+        "invoice",
         "INVALID_ID",
         %{
           payload: %{

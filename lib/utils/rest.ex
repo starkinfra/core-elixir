@@ -395,6 +395,43 @@ defmodule StarkCore.Utils.Rest do
     end
   end
 
+  # TBD: Add delete_raw
+
+  def delete_raw(
+    service,
+    resource_name,
+    id,
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
+    case Request.fetch(
+      service,
+      :delete,
+      "#{API.endpoint(resource_name)}/#{id}",
+      opts
+    ) do
+      {:ok, response} -> {:ok, response}
+      {:error, errors} -> {:error, errors}
+    end
+  end
+
+  def delete_raw!(
+    service,
+    resource_name,
+    id,
+    options
+  ) do
+    case delete_raw(
+      service,
+      resource_name,
+      id,
+      options
+    ) do
+      {:ok, entity} -> entity
+      {:error, errors} -> raise API.errors_to_string(errors)
+    end
+  end
+
   def patch_id(
     service,
     {resource_name, resource_maker},
@@ -426,6 +463,41 @@ defmodule StarkCore.Utils.Rest do
       payload
     ) do
       {:ok, entity} -> entity
+      {:error, errors} -> raise API.errors_to_string(errors)
+    end
+  end
+
+  def patch_raw(
+    service,
+    resource_name,
+    id,
+    options
+  ) do
+    opts = Map.merge(getJokerDefaultOptions(), options)
+    case Request.fetch(
+      service,
+      :patch,
+      "#{resource_name}/#{id}",
+      opts
+    ) do
+      {:ok, response} -> {:ok, JSON.decode!(response)}
+      {:error, errors} -> {:error, errors}
+    end
+  end
+
+  def patch_raw!(
+    service,
+    resource_name,
+    id,
+    options
+  ) do
+    case patch_raw(
+      service,
+      resource_name,
+      id,
+      options
+    ) do
+      {:ok, response} -> response
       {:error, errors} -> raise API.errors_to_string(errors)
     end
   end
