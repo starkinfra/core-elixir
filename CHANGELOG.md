@@ -13,5 +13,5 @@ Given a version number MAJOR.MINOR.PATCH, increment:
 
 
 ## [Unreleased]
-### Addeed
+### Added
 - Add stark-core basic resources and unit tests

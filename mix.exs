@@ -5,8 +5,8 @@ defmodule StarkCore.MixProject do
     [
       app: :starkcore,
       name: :starkcore,
-      version: "1.0.0",
-      homepage_url: "https://starkbank.com",
+      version: "0.1.0",
+      homepage_url: "https://starkinfra.com",
       source_url: "https://github.com/starkinfra/core-elixir",
       description: description(),
       elixir: "~> 1.17.2",
@@ -21,7 +21,7 @@ defmodule StarkCore.MixProject do
       maintainers: ["Stark Bank"],
       licenses: [:MIT],
       links: %{
-        "StarkInfra" => "https://starkbank.com",
+        "StarkInfra" => "https://starkinfra.com",
         "GitHub" => "https://github.com/starkinfra/core-elixir"
       }
     ]
@@ -45,8 +45,7 @@ defmodule StarkCore.MixProject do
     [
       {:starkbank_ecdsa, "~> 1.1.0"},
       {:jason, "~> 1.1"},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:uuid, "~> 1.1" , only: :test, runtime: false}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 end

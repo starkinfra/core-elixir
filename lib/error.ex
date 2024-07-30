@@ -9,7 +9,7 @@ defmodule StarkCore.Error do
 
   ## Attributes:
     - `code` [string]: defines de error code. ex: "invalidCredentials"
-    - `message` [string]: explains the detected error. ex: "Provided digital signature in the header Access-Signature does not check out. See https://docs.api.StarkCore.com/#auth for details."
+    - `message` [string]: explains the detected error. ex: "Provided digital signature in the header Access-Signature does not check out. See https://starkinfra.com/docs/api#received-request-authentication for details."
   """
   @type t :: %__MODULE__{
     code: String.t(),

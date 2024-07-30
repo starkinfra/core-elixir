@@ -39,15 +39,12 @@ defmodule StarkCore.Utils.Rest do
     options
   ) do
     opts = Map.merge(getJokerDefaultOptions(), options)
-    case Request.fetch(
+    Request.fetch_raw(
       service,
       :get,
       path,
       opts
-    ) do
-      {:ok, response} -> {:ok, JSON.decode!(response)}
-      {:error, errors} -> {:error, errors}
-    end
+    )
   end
 
   def get_raw!(
@@ -60,8 +57,8 @@ defmodule StarkCore.Utils.Rest do
       path,
       options
     ) do
-      {:ok, response} -> response
-      {:error, errors} -> raise API.errors_to_string(errors)
+      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
+      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
     end
   end
 
@@ -72,15 +69,12 @@ defmodule StarkCore.Utils.Rest do
   ) do
     opts = Map.merge(getJokerDefaultOptions(), options)
 
-    case Request.fetch(
+    Request.fetch_raw(
       service,
       :post,
       path,
       opts
-    ) do
-      {:ok, response} -> {:ok, JSON.decode!(response)}
-      {:error, errors} -> {:error, errors}
-    end
+    )
   end
 
   def post_raw!(
@@ -93,8 +87,8 @@ defmodule StarkCore.Utils.Rest do
       path,
       options
     ) do
-      {:ok, response} -> response
-      {:error, errors} -> raise API.errors_to_string(errors)
+      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
+      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
     end
   end
 
@@ -395,8 +389,6 @@ defmodule StarkCore.Utils.Rest do
     end
   end
 
-  # TBD: Add delete_raw
-
   def delete_raw(
     service,
     resource_name,
@@ -404,15 +396,12 @@ defmodule StarkCore.Utils.Rest do
     options
   ) do
     opts = Map.merge(getDefaultOptions(), options)
-    case Request.fetch(
+    Request.fetch_raw(
       service,
       :delete,
       "#{API.endpoint(resource_name)}/#{id}",
       opts
-    ) do
-      {:ok, response} -> {:ok, response}
-      {:error, errors} -> {:error, errors}
-    end
+    )
   end
 
   def delete_raw!(
@@ -427,8 +416,8 @@ defmodule StarkCore.Utils.Rest do
       id,
       options
     ) do
-      {:ok, entity} -> entity
-      {:error, errors} -> raise API.errors_to_string(errors)
+      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
+      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
     end
   end
 
@@ -474,15 +463,12 @@ defmodule StarkCore.Utils.Rest do
     options
   ) do
     opts = Map.merge(getJokerDefaultOptions(), options)
-    case Request.fetch(
+    Request.fetch_raw(
       service,
       :patch,
       "#{resource_name}/#{id}",
       opts
-    ) do
-      {:ok, response} -> {:ok, JSON.decode!(response)}
-      {:error, errors} -> {:error, errors}
-    end
+    )
   end
 
   def patch_raw!(
@@ -497,8 +483,8 @@ defmodule StarkCore.Utils.Rest do
       id,
       options
     ) do
-      {:ok, response} -> response
-      {:error, errors} -> raise API.errors_to_string(errors)
+      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
+      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
     end
   end
 
@@ -529,6 +515,45 @@ defmodule StarkCore.Utils.Rest do
     options
   ) do
     case get_sub_resource(
+      service,
+      resource_name,
+      {sub_resource_name, sub_resource_maker},
+      id,
+      options
+    ) do
+      {:ok, entity} -> entity
+      {:error, errors} -> raise API.errors_to_string(errors)
+    end
+  end
+
+  def post_sub_resource(
+    service,
+    resource_name,
+    {sub_resource_name, sub_resource_maker},
+    id,
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
+    url = "#{API.endpoint(resource_name)}/#{id}/#{API.endpoint(sub_resource_name)}"
+    case Request.fetch(
+      service,
+      :post,
+      url,
+      opts
+    ) do
+      {:ok, response} -> {:ok, process_single_response(response, sub_resource_name, sub_resource_maker)}
+      {:error, errors} -> {:error, errors}
+    end
+  end
+
+  def post_sub_resource!(
+    service,
+    resource_name,
+    {sub_resource_name, sub_resource_maker},
+    id,
+    options
+  ) do
+    case post_sub_resource(
       service,
       resource_name,
       {sub_resource_name, sub_resource_maker},

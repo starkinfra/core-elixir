@@ -216,6 +216,96 @@ defmodule StarkBank.Boleto do
   end
 end
 
+defmodule StarkBank.MerchantSession do
+  alias __MODULE__, as: MerchantSession
+
+  defstruct [:allowedFundingTypes, :allowedInstallments, :expiration, :allowedIps, :challengeMode, :created, :status, :tags, :updated, :uuid, :id]
+
+  @type t() :: %__MODULE__{}
+
+  @doc false
+  def resource() do
+    {
+      "MerchantSession",
+      &resource_maker/1
+    }
+  end
+
+  @doc false
+  def resource_maker(json) do
+    %MerchantSession{
+      id: json[:id],
+      allowedFundingTypes: json[:allowedFundingTypes],
+      allowedInstallments: json[:allowedInstallments],
+      expiration: json[:expiration],
+      allowedIps: json[:allowedIps],
+      challengeMode: json[:challengeMode],
+      created: json[:created],
+      status: json[:status],
+      tags: json[:tags],
+      updated: json[:updated],
+      uuid: json[:updated]
+    }
+  end
+end
+
+defmodule StarkBank.MerchantSessionPurchase do
+  alias __MODULE__, as: MerchantSessionPurchase
+
+  defstruct [
+    :id,
+    :amount,
+    :cardExpiration,
+    :cardNumber,
+    :cardSecurityCode,
+    :holderName,
+    :fundingType,
+    :holderEmail,
+    :holderPhone,
+    :billingCity,
+    :billingZipCode,
+    :billingStateCode,
+    :billingCountryCode,
+    :billingStreetLine1,
+    :billingStreetLine2,
+    :metadata,
+    :installmentCount
+  ]
+
+  @type t() :: %__MODULE__{}
+
+  @doc false
+  def resource() do
+    {
+      "purchase",
+      &resource_maker/1
+    }
+  end
+
+  @doc false
+  def resource_maker(json) do
+    %MerchantSessionPurchase{
+      id: json[:id],
+      amount: json[:amount],
+      cardExpiration: json[:cardExpiration],
+      cardNumber: json[:cardNumber],
+      cardSecurityCode: json[:cardSecurityCode],
+      holderName: json[:holderName],
+      fundingType: json[:fundingType],
+      holderEmail: json[:holderEmail],
+      holderPhone: json[:holderPhone],
+      billingCity: json[:billingCity],
+      billingZipCode: json[:billingZipCode],
+      billingStateCode: json[:billingStateCode],
+      billingCountryCode: json[:billingCountryCode],
+      billingStreetLine1: json[:billingStreetLine1],
+      billingStreetLine2: json[:billingStreetLine2],
+      metadata: json[:metadata],
+      installmentCount: json[:installmentCount]
+    }
+  end
+end
+
 defmodule StarkBank.Invoice.Payment do
   alias StarkBank.Invoice
 
@@ -276,25 +366,27 @@ end
 
 defmodule StarkCoreTestRest.GetRaw do
   alias StarkCore.Utils.Rest
+  alias StarkBank.Invoice
+  alias StarkCore.Utils.JSON
   use ExUnit.Case
 
   @tag :get_raw
   test "Should get balance using get_raw" do
-    {:ok, response} = Rest.get_raw(:bank, "balance", %{})
-    balance = List.first(response["balances"])
+    {:ok, %{headers: headers, content: content, status_code: status_code}} = Rest.get_raw(:bank, "balance", %{})
+    balance = List.first(JSON.decode!(content)["balances"])
     assert !is_nil(balance["amount"])
   end
 
   @tag :get_raw
   test "Should get balance using get_raw!" do
-    response = Rest.get_raw!(:bank, "balance", %{})
-    balance = List.first(response["balances"])
+    {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.get_raw!(:bank, "balance", %{})
+    balance = List.first(JSON.decode!(content)["balances"])
     assert !is_nil(balance["amount"])
   end
 
   @tag :get_raw_fail
   test "Should silently fail to get balance using get_raw" do
-    assert {:error, _response} = Rest.get_raw(:bank, "balancex", %{})
+    {:error, %{headers: _headers, content: _content, status_code: 400}} = Rest.get_raw(:bank, "balancex", %{})
   end
 
   @tag :get_raw_fail
@@ -303,15 +395,37 @@ defmodule StarkCoreTestRest.GetRaw do
       Rest.get_raw!(:bank, "balancex", %{})
     end)
   end
+
+  @tag :get_raw
+  test "Should get pdf sub-resource of paid Invoice using get_raw" do
+    [ok: response] = Rest.get_list(
+      :bank,
+      Invoice.resource(),
+      %{
+        query: %{
+          status: "paid",
+          limit: 1
+        }
+      }
+    )
+      |> Enum.take(1)
+
+    assert {:ok, _} = Rest.get_raw(
+      :bank,
+      "invoice/#{response.id}/pdf",
+      %{}
+    )
+  end
 end
 
 defmodule StarkCoreTestRest.PostRaw do
   alias StarkCore.Utils.Rest
+  alias StarkCore.Utils.JSON
   use ExUnit.Case
 
   @tag :post_raw
   test "Should create invoices using Rest.post_raw" do
-    {:ok, invoices_created} = Rest.post_raw(
+    {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.post_raw(
       :bank,
       "invoice",
       %{
@@ -326,13 +440,13 @@ defmodule StarkCoreTestRest.PostRaw do
         }
       }
     )
-    invoice_created = List.first(invoices_created["invoices"])
+    invoice_created = List.first(JSON.decode!(content)["invoices"])
     assert invoice_created["amount"] > 0
   end
 
   @tag :post_raw
   test "Should create invoices using Rest.post_raw!" do
-    invoices_created = Rest.post_raw!(
+    {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.post_raw!(
       :bank,
       "invoice",
       %{
@@ -347,7 +461,7 @@ defmodule StarkCoreTestRest.PostRaw do
         }
       }
     )
-    invoice_created = List.first(invoices_created["invoices"])
+    invoice_created = List.first(JSON.decode!(content)["invoices"])
     assert invoice_created["amount"] > 0
   end
 
@@ -816,7 +930,7 @@ defmodule StarkCoreTestRest.DeleteRaw do
 
   @tag :delete
   test "Should delete the created Boleto by its ID using delete_raw", state do
-    assert {:ok, _deleted_response} = Rest.delete_raw(
+    assert {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.delete_raw(
       :bank,
       "boleto",
       state[:boleto].id,
@@ -826,7 +940,7 @@ defmodule StarkCoreTestRest.DeleteRaw do
 
   @tag :delete
   test "Should delete the created Boleto by its ID using delete_raw!", state do
-    assert Rest.delete_raw!(
+    assert {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.delete_raw!(
       :bank,
       "boleto",
       state[:boleto].id,
@@ -836,7 +950,7 @@ defmodule StarkCoreTestRest.DeleteRaw do
 
   @tag :delete_fail
   test "Should silently fail trying delete a Boleto using delete_raw with an INVALID_ID" do
-    assert {:error, _deleted_response} = Rest.delete_raw(
+    assert {:error, %{headers: _headers, content: content, status_code: 400}} = Rest.delete_raw(
       :bank,
       "boleto",
       "INVALID_ID",
@@ -1040,7 +1154,7 @@ defmodule StarkCoreTestRest.PatchRaw do
 
   @tag :patch_raw
   test "Should patch Invoice by its ID using patch_raw", state do
-    assert {:ok, _response} = Rest.patch_raw(
+    assert {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.patch_raw(
       :bank,
       "invoice",
       state[:invoice].id,
@@ -1055,7 +1169,7 @@ defmodule StarkCoreTestRest.PatchRaw do
 
   @tag :patch
   test "Should patch Invoice by its ID using patch_raw!", state do
-    assert Rest.patch_raw!(
+    assert {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.patch_raw!(
       :bank,
       "invoice",
       state[:invoice].id,
@@ -1070,7 +1184,7 @@ defmodule StarkCoreTestRest.PatchRaw do
 
   @tag :patch_fail
   test "Should silently fail patch Invoice using patch_raw with INVALID_ID" do
-    assert {:error, _response} = Rest.patch_raw(
+    assert {:error, %{headers: _headers, content: _content, status_code: 400}} = Rest.patch_raw(
       :bank,
       "invoice",
       "INVALID_ID",
@@ -1167,5 +1281,84 @@ defmodule StarkCoreTestRest.GetSubResource do
         %{}
       )
     end
+  end
+end
+
+defmodule StarkCoreTestRest.PostSubResource do
+  alias StarkBank.MerchantSessionPurchase
+  alias StarkCore.Utils.Rest
+  alias StarkCore.Utils.JSON
+  use ExUnit.Case
+
+  setup do
+    merchantSessionJson = %{
+      allowedFundingTypes: [
+        "debit",
+        "credit"
+      ],
+      allowedInstallments: [
+        %{
+          totalAmount: 0,
+          count: 1
+        },
+        %{
+          totalAmount: 120,
+          count: 2
+        },
+        %{
+          totalAmount: 180,
+          count: 12
+        }
+      ],
+      expiration: 3600,
+      challengeMode: "disabled",
+      tags: [
+        "yourTags"
+      ]
+    }
+    {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.post_raw(
+      :bank,
+      "merchant-session",
+      %{
+        payload: merchantSessionJson
+      }
+    )
+
+    {:ok, merchant_session: JSON.decode!(content)["session"]}
+  end
+
+  @tag :post_sub_resource
+  test "Create a merchant session using post_sub_resource", state do
+    assert {:ok, _} = Rest.post_sub_resource(
+      :bank,
+      "MerchantSession",
+      MerchantSessionPurchase.resource(),
+      state[:merchant_session]["uuid"],
+      %{
+        payload: %{
+          amount: 180,
+          installmentCount: 12,
+          cardExpiration: "2035-01",
+          cardNumber: "5277696455399733",
+          cardSecurityCode: "123",
+          holderName: "Holder Name",
+          holderEmail: "holdeName@email.com",
+          holderPhone: "11111111111",
+          fundingType: "credit",
+          billingCountryCode: "BRA",
+          billingCity: "São Paulo",
+          billingStateCode: "SP",
+          billingStreetLine1: "Rua do Holder Name, 123",
+          billingStreetLine2: "",
+          billingZipCode: "11111-111",
+          metadata: %{
+              userAgent: "Postman",
+              userIp: "255.255.255.255",
+              language: "pt-BR",
+              timezoneOffset: 3
+          }
+        }
+      }
+    ) |> IO.inspect
   end
 end
