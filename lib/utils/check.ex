@@ -67,9 +67,8 @@ defmodule StarkCore.Utils.Check do
     end
   end
 
-  def options(options) do
-    options
-    |> Enum.into(%{})
+  def query_params(query) do
+    query
     |> fill_limit()
     |> fill_date_field(:after)
     |> fill_date_field(:before)
@@ -92,17 +91,18 @@ defmodule StarkCore.Utils.Check do
 
   def user(user) when is_nil(user) do
     case Application.fetch_env(:starkcore, :project) do
-      {:ok, project_info} -> project_info |> StarkCore.project()
+      {:ok, project_info} -> {:ok, project_info
+        |> StarkCore.project()}
       :error -> organization_user()
     end
   end
 
   def user(user = %Project{}) do
-    user
+    {:ok, user}
   end
 
   def user(user = %Organization{}) do
-    user
+    {:ok, user}
   end
 
   defp organization_user() do
@@ -112,7 +112,22 @@ defmodule StarkCore.Utils.Check do
     end
   end
 
-  def language() do
+
+  def host(input) do
+    case Enum.member?([:bank, :infra, :sign], input) do
+      true -> {:ok, input}
+      false -> {:error, "service #{input} is invalid"}
+    end
+  end
+
+  def language(lang) when is_binary(lang) do
+    case Enum.member?(["en-US", "pt-BR"], lang) do
+      true -> String.to_charlist(lang)
+      false -> ~c"en-US"
+    end
+  end
+
+  def language(lang) when is_nil(lang) do
     case Application.fetch_env(:starkcore, :language) do
       {:ok, ~c"en-US"} -> ~c"en-US"
       {:ok, "en-US"} -> ~c"en-US"

@@ -1,40 +1,142 @@
 defmodule StarkCore.Utils.Rest do
-  @moduledoc false
-
   alias StarkCore.Utils.Request
   alias StarkCore.Utils.Check
   alias StarkCore.Utils.QueryGenerator
   alias StarkCore.Utils.API
   alias StarkCore.Utils.JSON
 
-  def get_page(service, {resource_name, resource_maker}, options) do
+  def getDefaultOptions() do
+    %{
+      payload: nil,
+      query: nil,
+      user: nil,
+      sdk_version: nil,
+      api_version: "v2",
+      language: "en-US",
+      timeout: 15,
+      prefix: "",
+      limit: 100
+    }
+  end
+
+  def getJokerDefaultOptions() do
+    %{
+      payload: nil,
+      query: nil,
+      user: nil,
+      sdk_version: Mix.Project.config()[:version],
+      api_version: "v2",
+      language: "en-US",
+      timeout: 15,
+      prefix: "Joker",
+      limit: 100
+    }
+  end
+
+  def get_raw(
+    service,
+    path,
+    options
+  ) do
+    opts = Map.merge(getJokerDefaultOptions(), options)
+    case Request.fetch(
+      service,
+      :get,
+      path,
+      opts
+    ) do
+      {:ok, response} -> {:ok, JSON.decode!(response)}
+      {:error, errors} -> {:error, errors}
+    end
+  end
+
+  def get_raw!(
+    service,
+    path,
+    options
+  ) do
+    case get_raw(
+      service,
+      path,
+      options
+    ) do
+      {:ok, response} -> response
+      {:error, errors} -> raise API.errors_to_string(errors)
+    end
+  end
+
+  def post_raw(
+    service,
+    path,
+    options
+  ) do
+    opts = Map.merge(getJokerDefaultOptions(), options)
+
+    case Request.fetch(
+      service,
+      :post,
+      path,
+      opts
+    ) do
+      {:ok, response} -> {:ok, JSON.decode!(response)}
+      {:error, errors} -> {:error, errors}
+    end
+  end
+
+  def post_raw!(
+    service,
+    path,
+    options
+  ) do
+    case post_raw(
+      service,
+      path,
+      options
+    ) do
+      {:ok, response} -> response
+      {:error, errors} -> raise API.errors_to_string(errors)
+    end
+  end
+
+  def get_page(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :get,
       "#{API.endpoint(resource_name)}",
-      query: Enum.into(options, %{}) |> Map.delete(:user) |> API.cast_json_to_api_format(),
-      user: options[:user]
+      opts
     ) do
       {:ok, response} -> {:ok, process_page_response(resource_name, resource_maker, response)}
       {:error, errors} -> {:error, errors}
     end
   end
 
-  def get_page!(service, {resource_name, resource_maker}, options) do
-    case Request.fetch(
+  def get_page!(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    case get_page(
       service,
-      :get,
-      "#{API.endpoint(resource_name)}",
-      query: Enum.into(options, %{}) |> Map.delete(:user) |> API.cast_json_to_api_format(),
-      user: options[:user]
+      {resource_name, resource_maker},
+      options
     ) do
-      {:ok, response} -> process_page_response(resource_name, resource_maker, response)
-      {:error, errors} -> raise API.errors_to_string(errors)
+      {:ok, response} -> response
+      {:error, err} -> raise API.errors_to_string(err)
     end
   end
 
-  def get_list(service, {resource_name, resource_maker}, options) do
-    {getter, query} = get_list_parameters(service, options, resource_name)
+  def get_list(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
+    {getter, query} = get_list_parameters(service, resource_name, opts)
 
     Stream.resource(
       fn ->
@@ -57,8 +159,13 @@ defmodule StarkCore.Utils.Rest do
     )
   end
 
-  def get_list!(service, {resource_name, resource_maker}, options) do
-    {getter, query} = get_list_parameters(service, options, resource_name)
+  def get_list!(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
+    {getter, query} = get_list_parameters(service, resource_name, opts)
 
     Stream.resource(
       fn ->
@@ -81,175 +188,309 @@ defmodule StarkCore.Utils.Rest do
     )
   end
 
-  defp get_list_parameters(service, options, resource_name) do
-    query = Enum.into(options |> Check.options(), %{})
+  defp get_list_parameters(
+    service,
+    resource_name,
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
+    query = opts |> Check.query_params()
     {
-      make_getter(service, query[:user],resource_name),
-      query |> Map.delete(:user) |> Map.put(:limit, query[:limit])
+      make_getter(
+        service,
+        query[:user],
+        resource_name,
+        opts
+      ),
+      query
     }
   end
 
-  defp make_getter(service, user, resource_name) do
+  defp make_getter(
+    service,
+    user,
+    resource_name,
+    opts
+  ) do
     fn query ->
       Request.fetch(
         service,
         :get,
         API.endpoint(resource_name),
-        query: query,
-        user: user
+        opts
       )
     end
   end
 
-  def get_id(service, {resource_name, resource_maker}, id, options) do
-    user = options[:user]
+  def get_id(
+    service,
+    {resource_name, resource_maker},
+    id,
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
 
-    case Request.fetch(service, :get, "#{API.endpoint(resource_name)}/#{id}", user: user) do
+    case Request.fetch(
+      service,
+      :get,
+      "#{API.endpoint(resource_name)}/#{id}",
+      opts
+    ) do
       {:ok, response} -> {:ok, process_single_response(response, resource_name, resource_maker)}
       {:error, errors} -> {:error, errors}
     end
   end
 
-  def get_id!(service, {resource_name, resource_maker}, id, options) do
-    case get_id(service, {resource_name, resource_maker}, id, options) do
+  def get_id!(
+    service,
+    {resource_name, resource_maker},
+    id,
+    options
+  ) do
+    case get_id(
+      service,
+      {resource_name, resource_maker},
+      id,
+      options
+    ) do
       {:ok, entity} -> entity
       {:error, errors} -> raise API.errors_to_string(errors)
     end
   end
 
-  def get_content(service, {resource_name, _resource_maker}, id, sub_resource_name, options, user) do
-    case Request.fetch(service, :get, "#{API.endpoint(resource_name)}/#{id}/#{sub_resource_name}", query: options, user: user) do
+  def get_content(
+    service,
+    {resource_name, resource_maker},
+    id,
+    sub_resource_name,
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
+    case Request.fetch(
+      service,
+      :get,
+      "#{API.endpoint(resource_name)}/#{id}/#{sub_resource_name}",
+      opts
+    ) do
       {:ok, content} -> {:ok, content}
       {:error, errors} -> {:error, errors}
     end
   end
 
-  def get_content!(service, {resource_name, _resource_maker}, id, sub_resource_name, options, user) do
-    case Request.fetch(service, :get, "#{API.endpoint(resource_name)}/#{id}/#{sub_resource_name}", query: options, user: user) do
+  def get_content!(
+    service,
+    {resource_name, resource_maker},
+    id,
+    sub_resource_name,
+    options
+  ) do
+    case get_content(
+      service,
+      {resource_name, resource_maker},
+      id,
+      sub_resource_name,
+      options
+    ) do
       {:ok, content} -> content
       {:error, errors} -> raise API.errors_to_string(errors)
     end
   end
 
-  def post(service, {resource_name, resource_maker}, entities, options) do
-    user = options[:user]
-
+  def post(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :post,
       "#{API.endpoint(resource_name)}",
-      payload: prepare_payload(resource_name, entities),
-      user: user
+      opts
     ) do
       {:ok, response} -> {:ok, process_response(resource_name, resource_maker, response)}
       {:error, errors} -> {:error, errors}
     end
   end
 
-  def post!(service, {resource_name, resource_maker}, entities, options) do
-    case post(service, {resource_name, resource_maker}, entities, options) do
+  def post!(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    case post(
+      service,
+      {resource_name, resource_maker},
+      options
+    ) do
       {:ok, entities} -> entities
       {:error, errors} -> raise API.errors_to_string(errors)
     end
   end
 
-  def post_single(service, {resource_name, resource_maker}, entity, options) do
-    user = options[:user]
-
+  def post_single(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :post,
       "#{API.endpoint(resource_name)}",
-      payload: API.api_json(entity),
-      user: user
+      opts
     ) do
       {:ok, response} -> {:ok, process_single_response(response, resource_name, resource_maker)}
       {:error, errors} -> {:error, errors}
     end
   end
 
-  def post_single!(service, {resource_name, resource_maker}, entity, options) do
-    case post_single(service, {resource_name, resource_maker}, entity, options) do
+  def post_single!(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    case post_single(
+      service,
+      {resource_name, resource_maker},
+      options
+    ) do
       {:ok, entity} -> entity
       {:error, errors} -> raise API.errors_to_string(errors)
     end
   end
 
-  def delete_id(service, {resource_name, resource_maker}, id, options) do
-    user = options[:user]
-
-    case Request.fetch(service, :delete, "#{API.endpoint(resource_name)}/#{id}", user: user) do
+  def delete_id(
+    service,
+    {resource_name, resource_maker},
+    id,
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
+    case Request.fetch(
+      service,
+      :delete,
+      "#{API.endpoint(resource_name)}/#{id}",
+      opts
+    ) do
       {:ok, response} -> {:ok, process_single_response(response, resource_name, resource_maker)}
       {:error, errors} -> {:error, errors}
     end
   end
 
-  def delete_id!(service, {resource_name, resource_maker}, id, options) do
-    case delete_id(service, {resource_name, resource_maker}, id, options) do
+  def delete_id!(
+    service,
+    {resource_name, resource_maker},
+    id,
+    options
+  ) do
+    case delete_id(
+      service,
+      {resource_name, resource_maker},
+      id,
+      options
+    ) do
       {:ok, entity} -> entity
       {:error, errors} -> raise API.errors_to_string(errors)
     end
   end
 
-  def patch_id(service, {resource_name, resource_maker}, id, payload) do
+  def patch_id(
+    service,
+    {resource_name, resource_maker},
+    id,
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :patch,
       "#{API.endpoint(resource_name)}/#{id}",
-      payload: payload |> Map.delete(:user) |> API.cast_json_to_api_format(),
-      user: payload[:user]
+      opts
     ) do
       {:ok, response} -> {:ok, process_single_response(response, resource_name, resource_maker)}
       {:error, errors} -> {:error, errors}
     end
   end
 
-  def patch_id!(service, {resource_name, resource_maker}, id, payload) do
-    case patch_id(service, {resource_name, resource_maker}, id, payload) do
+  def patch_id!(
+    service,
+    {resource_name, resource_maker},
+    id,
+    payload
+  ) do
+    case patch_id(
+      service,
+      {resource_name, resource_maker},
+      id,
+      payload
+    ) do
       {:ok, entity} -> entity
       {:error, errors} -> raise API.errors_to_string(errors)
     end
   end
 
-  def get_sub_resource(service, resource_name, {sub_resource_name, sub_resource_maker}, id, options) do
+  def get_sub_resource(
+    service,
+    resource_name,
+    {sub_resource_name, sub_resource_maker},
+    id,
+    options
+  ) do
+    opts = Map.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :get,
       "#{API.endpoint(resource_name)}/#{id}/#{API.endpoint(sub_resource_name)}",
-      query: options |> Map.delete(:user) |> API.cast_json_to_api_format(),
-      user: options[:user]
+      opts
     ) do
       {:ok, response} -> {:ok, process_single_response(response, sub_resource_name, sub_resource_maker)}
       {:error, errors} -> {:error, errors}
     end
   end
 
-  def get_sub_resource!(service, resource_name, {sub_resource_name, sub_resource_maker}, id, options) do
-    case get_sub_resource(service, resource_name, {sub_resource_name, sub_resource_maker}, id, options) do
+  def get_sub_resource!(
+    service,
+    resource_name,
+    {sub_resource_name, sub_resource_maker},
+    id,
+    options
+  ) do
+    case get_sub_resource(
+      service,
+      resource_name,
+      {sub_resource_name, sub_resource_maker},
+      id,
+      options
+    ) do
       {:ok, entity} -> entity
       {:error, errors} -> raise API.errors_to_string(errors)
     end
   end
 
-  defp prepare_payload(resource_name, entities) do
-    Map.put(
-      %{},
-      API.last_name_plural(resource_name),
-      Enum.map(entities, &API.api_json/1)
-    )
-  end
-
-  defp process_single_response(response, resource_name, resource_maker) do
+  defp process_single_response(
+    response,
+    resource_name,
+    resource_maker
+  ) do
     JSON.decode!(response)[API.last_name(resource_name)]
     |> API.from_api_json(resource_maker)
   end
 
-  defp process_response(resource_name, resource_maker, response) do
+  defp process_response(
+    resource_name,
+    resource_maker,
+    response
+  ) do
     JSON.decode!(response)[API.last_name_plural(resource_name)]
     |> Enum.map(fn json -> API.from_api_json(json, resource_maker) end)
   end
 
-  defp process_page_response(resource_name, resource_maker, response) do
+  defp process_page_response(
+    resource_name,
+    resource_maker,
+    response
+  ) do
     decoded_response = JSON.decode!(response)
     {
       decoded_response["cursor"],

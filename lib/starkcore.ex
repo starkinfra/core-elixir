@@ -25,7 +25,8 @@ defmodule StarkCore do
   def project(parameters) do
     %{environment: environment, id: id, private_key: private_key} =
       Enum.into(
-        parameters |> Check.enforced_keys([:environment, :id, :private_key]),
+        parameters
+          |> Check.enforced_keys([:environment, :id, :private_key]),
         %{}
       )
 
@@ -58,11 +59,16 @@ defmodule StarkCore do
   """
 
   def organization(parameters) do
-    %{environment: environment, id: id, private_key: private_key, workspace_id: workspace_id} =
-      Enum.into(
-        parameters |> Check.enforced_keys([:environment, :id, :private_key]),
-        %{workspace_id: nil}
-      )
+    %{
+      environment: environment,
+      id: id,
+      private_key: private_key,
+      workspace_id: workspace_id
+    } = Enum.into(
+      parameters
+        |> Check.enforced_keys([:environment, :id, :private_key]),
+      %{workspace_id: nil}
+    )
 
     Organization.validate(environment, id, private_key, workspace_id)
   end

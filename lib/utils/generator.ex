@@ -6,7 +6,11 @@ defmodule StarkCore.Utils.QueryGenerator do
   alias StarkCore.Utils.API
 
   def start_query(function, key, query) do
-    Task.start_link(fn -> yield([], function, key, query, true) end)
+    Task.start_link(
+      fn ->
+        yield([], function, key, query, true)
+      end
+    )
   end
 
   def get(pid) do
