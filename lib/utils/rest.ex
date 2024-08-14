@@ -38,7 +38,7 @@ defmodule StarkCore.Utils.Rest do
     path,
     options
   ) do
-    opts = Map.merge(getJokerDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getJokerDefaultOptions(), Enum.into(options, %{}))
     Request.fetch_raw(
       service,
       :get,
@@ -67,7 +67,7 @@ defmodule StarkCore.Utils.Rest do
     path,
     options
   ) do
-    opts = Map.merge(getJokerDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getJokerDefaultOptions(), Enum.into(options, %{}))
 
     Request.fetch_raw(
       service,
@@ -98,7 +98,7 @@ defmodule StarkCore.Utils.Rest do
     {resource_name, resource_maker},
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :get,
@@ -164,7 +164,7 @@ defmodule StarkCore.Utils.Rest do
     {resource_name, resource_maker},
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     {getter, query} = get_list_parameters(service, resource_name, opts)
 
     Stream.resource(
@@ -229,7 +229,7 @@ defmodule StarkCore.Utils.Rest do
     id,
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
 
     case Request.fetch(
       service,
@@ -261,12 +261,12 @@ defmodule StarkCore.Utils.Rest do
 
   def get_content(
     service,
-    {resource_name, resource_maker},
+    resource_name,
     id,
     sub_resource_name,
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :get,
@@ -280,14 +280,14 @@ defmodule StarkCore.Utils.Rest do
 
   def get_content!(
     service,
-    {resource_name, resource_maker},
+    resource_name,
     id,
     sub_resource_name,
     options
   ) do
     case get_content(
       service,
-      {resource_name, resource_maker},
+      resource_name,
       id,
       sub_resource_name,
       options
@@ -302,7 +302,7 @@ defmodule StarkCore.Utils.Rest do
     {resource_name, resource_maker},
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :post,
@@ -334,7 +334,7 @@ defmodule StarkCore.Utils.Rest do
     {resource_name, resource_maker},
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :post,
@@ -367,7 +367,7 @@ defmodule StarkCore.Utils.Rest do
     id,
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :delete,
@@ -402,7 +402,7 @@ defmodule StarkCore.Utils.Rest do
     id,
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     Request.fetch_raw(
       service,
       :delete,
@@ -434,7 +434,7 @@ defmodule StarkCore.Utils.Rest do
     id,
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :patch,
@@ -469,7 +469,7 @@ defmodule StarkCore.Utils.Rest do
     id,
     options
   ) do
-    opts = Map.merge(getJokerDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getJokerDefaultOptions(), options)
     Request.fetch_raw(
       service,
       :patch,
@@ -502,7 +502,7 @@ defmodule StarkCore.Utils.Rest do
     id,
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :get,
@@ -540,7 +540,7 @@ defmodule StarkCore.Utils.Rest do
     id,
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getDefaultOptions(), options)
     url = "#{API.endpoint(resource_name)}/#{id}/#{API.endpoint(sub_resource_name)}"
     case Request.fetch(
       service,

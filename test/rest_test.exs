@@ -686,7 +686,7 @@ defmodule StarkCoreTestRest.GetContent do
 
     assert {:ok, _response} = Rest.get_content(
       :bank,
-      Invoice.resource(),
+      "Invoice",
       invoice_listed.id,
       "pdf",
       []
@@ -704,7 +704,7 @@ defmodule StarkCoreTestRest.GetContent do
 
     response = Rest.get_content!(
       :bank,
-      Invoice.resource(),
+      "Invoice",
       invoice_listed.id,
       "pdf",
       []
@@ -717,7 +717,7 @@ defmodule StarkCoreTestRest.GetContent do
   test "Should silently fail to get qrcode of invoice using get_content on non existant Invoice ID" do
     assert {:error, _response} = Rest.get_content(
       :bank,
-      Invoice.resource(),
+      "Invoice",
       "123412341234",
       "pdf",
       []
@@ -729,7 +729,7 @@ defmodule StarkCoreTestRest.GetContent do
     assert_raise RuntimeError, fn ->
       Rest.get_content!(
         :bank,
-        Invoice.resource(),
+        "Invoice",
         "123412341234",
         "pdf",
         []
