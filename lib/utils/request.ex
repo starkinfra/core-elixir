@@ -4,11 +4,11 @@ defmodule StarkCore.Utils.Request do
   alias StarkCore.Utils.JSON
   alias StarkCore.Utils.Check
   alias StarkCore.Utils.URL
-  alias StarkCore.Project
-  alias StarkCore.Organization
+  alias StarkCore.User.Project
+  alias StarkCore.User.Organization
   alias StarkCore.Error
 
-  @type requestOptions :: %{
+  @type requestOptions :: [
     payload: map(),
     query: list(),
     user: Project.t() | Organization.t(),
@@ -17,7 +17,7 @@ defmodule StarkCore.Utils.Request do
     language: String.t(),
     timeout: number(),
     prefix: String.t()
-  }
+  ]
 
   @type rawResponse :: %{
     status_code: non_neg_integer(),
@@ -30,7 +30,7 @@ defmodule StarkCore.Utils.Request do
     String.t(),
     atom(),
     String.t(),
-    %{
+    [
       payload: map(),
       query: list(),
       user: Project.t() | Organization.t(),
@@ -39,7 +39,7 @@ defmodule StarkCore.Utils.Request do
       language: String.t(),
       timeout: number(),
       prefix: String.t()
-    }
+    ]
   ) :: {:ok, String.t()} | {:error, [Error.t()]}
   def fetch(
     host,
@@ -48,16 +48,16 @@ defmodule StarkCore.Utils.Request do
     opts
   ) do
     with {:ok, _} <- Check.host(host),
-      {:ok, user} <- Check.user(Map.get(opts, :user)) do
+      {:ok, user} <- Check.user(opts[:user]) do
       request(
         user,
         method,
-        URL.get_url(host, user.environment, opts.api_version, path, opts.query),
-        opts.payload,
-        opts.prefix,
-        opts.sdk_version,
-        opts.language,
-        opts.timeout
+        URL.get_url(host, user.environment, opts[:api_version], path, opts[:query]),
+        opts[:payload],
+        opts[:prefix],
+        opts[:sdk_version],
+        opts[:language],
+        opts[:timeout]
       )
         |> process_response
     else
@@ -79,18 +79,18 @@ defmodule StarkCore.Utils.Request do
     opts
   ) do
     with {:ok, _} <- Check.host(host),
-      {:ok, user} <- Check.user(Map.get(opts, :user))
+      {:ok, user} <- Check.user(opts[:user])
     do
       # {status_code, response_body, headers} =
       request(
         user,
         method,
-        URL.get_url(host, user.environment, opts.api_version, path, opts.query),
-        opts.payload,
-        opts.prefix,
-        opts.sdk_version,
-        opts.language,
-        opts.timeout
+        URL.get_url(host, user.environment, opts[:api_version], path, opts[:query]),
+        opts[:payload],
+        opts[:prefix],
+        opts[:sdk_version],
+        opts[:language],
+        opts[:timeout]
       )
         |> process_raw_response
 
@@ -121,11 +121,9 @@ defmodule StarkCore.Utils.Request do
       ],
     ]
 
-    req_params = get_request_params(user, url, payload, prefix, sdk_version, language)
-
     {:ok, {{~c"HTTP/1.1", status_code, _message}, headers, response_body}} = :httpc.request(
       method,
-      req_params,
+      get_request_params(user, url, payload, prefix, sdk_version, language),
       http_request_opts,
       []
     )
