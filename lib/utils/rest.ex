@@ -7,7 +7,7 @@ defmodule StarkCore.Utils.Rest do
 
   def getDefaultOptions() do
     [
-      payload: %{},
+      payload: nil,
       query: [],
       user: nil,
       sdk_version: nil,
@@ -38,7 +38,7 @@ defmodule StarkCore.Utils.Rest do
     path,
     options
   ) do
-    opts = Keyword.merge(getJokerDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getJokerDefaultOptions(), options)
     Request.fetch_raw(
       service,
       :get,
@@ -67,7 +67,7 @@ defmodule StarkCore.Utils.Rest do
     path,
     options
   ) do
-    opts = Keyword.merge(getJokerDefaultOptions(), Enum.into(options, %{}))
+    opts = Keyword.merge(getJokerDefaultOptions(), options)
 
     Request.fetch_raw(
       service,
@@ -194,7 +194,7 @@ defmodule StarkCore.Utils.Rest do
     options
   ) do
     updated_options = Keyword.merge(getDefaultOptions(), options)
-    query = Enum.into(updated_options, %{}) |> Check.query_params()
+    query = updated_options[:query] |> Check.query_params()
     {
       make_getter(
         service,
@@ -211,14 +211,11 @@ defmodule StarkCore.Utils.Rest do
     opts
   ) do
     fn query ->
-      # Move limit to query string
-      updated_opts = Keyword.put(opts, :query, Map.put(query, :limit, opts[:limit]))
-
       Request.fetch(
         service,
         :get,
         API.endpoint(resource_name),
-        updated_opts
+        Keyword.put(opts, :query, query)
       )
     end
   end

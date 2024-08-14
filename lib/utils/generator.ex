@@ -36,7 +36,7 @@ defmodule StarkCore.Utils.QueryGenerator do
     cursor = query[:cursor]
 
     if (first or (!is_nil(cursor) and cursor != "")) and (is_nil(limit) or limit > 0) do
-      case function.(query |> Map.put(:limit, limit |> Check.limit()) |> API.cast_json_to_api_format()) do
+      case function.(query |> Keyword.put(:limit, limit |> Check.limit()) |> API.cast_json_to_api_format()) do
         {:ok, result} ->
           decoded = JSON.decode!(result)
           result_quantity = length(result)
@@ -46,8 +46,8 @@ defmodule StarkCore.Utils.QueryGenerator do
             function,
             key,
             query
-              |> Map.put(:cursor, decoded["cursor"])
-              |> Map.put(:limit, iterate_limit(limit, result_quantity))
+              |> Keyword.put(:cursor, decoded["cursor"])
+              |> Keyword.put(:limit, iterate_limit(limit, result_quantity))
           )
 
         {:error, error} ->

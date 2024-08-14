@@ -564,7 +564,7 @@ defmodule StarkCoreTestRest.GetList do
   end
 
   test "Should get a list of invoices using get_list limited to 3 results for request" do
-    [ok: _invoice] = Rest.get_list(
+    Rest.get_list(
       :bank,
       Invoice.resource(),
       [limit: 3]
@@ -990,7 +990,7 @@ defmodule StarkCoreTestRest.Delete do
     {:ok, created_boleto} = Rest.post(
       :bank,
       Boleto.resource(),
-      %{
+      [
         payload: %{
           boletos: [%{
             amount: 15000,
@@ -1004,7 +1004,7 @@ defmodule StarkCoreTestRest.Delete do
             zipCode: "02051-050"
           }]
         }
-      }
+      ]
     )
 
     {:ok, [boleto: created_boleto |> hd]}
@@ -1128,12 +1128,12 @@ defmodule StarkCoreTestRest.PatchId do
         :bank,
         Invoice.resource(),
         "INVALID_ID",
-        %{
+        [
           payload: %{
             amount: 20000,
             expiration: 3600
           }
-        }
+        ]
       )
     end
   end
@@ -1213,12 +1213,12 @@ defmodule StarkCoreTestRest.PatchRaw do
         :bank,
         "invoice",
         "INVALID_ID",
-        %{
+        [
           payload: %{
             amount: 20000,
             expiration: 3600
           }
-        }
+        ]
       )
     end
   end
@@ -1234,12 +1234,12 @@ defmodule StarkCoreTestRest.GetSubResource do
     [ok: paid_invoice] = Rest.get_list(
       :bank,
       Invoice.resource(),
-      %{
-        query: %{
+      [
+        query: [
           status: "paid",
           limit: 1
-        }
-      }
+        ]
+      ]
     )
       |> Enum.take(1)
 
@@ -1328,9 +1328,9 @@ defmodule StarkCoreTestRest.PostSubResource do
     {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.post_raw(
       :bank,
       "merchant-session",
-      %{
+      [
         payload: merchantSessionJson
-      }
+      ]
     )
 
     {:ok, merchant_session: JSON.decode!(content)["session"]}
@@ -1343,7 +1343,7 @@ defmodule StarkCoreTestRest.PostSubResource do
       "MerchantSession",
       MerchantSessionPurchase.resource(),
       state[:merchant_session]["uuid"],
-      %{
+      [
         payload: %{
           amount: 180,
           installmentCount: 12,
@@ -1367,7 +1367,7 @@ defmodule StarkCoreTestRest.PostSubResource do
               timezoneOffset: 3
           }
         }
-      }
+      ]
     )
   end
 end

@@ -30,7 +30,6 @@ defmodule StarkCore.Utils.URL do
       for {k, v} <- query |> API.cast_json_to_api_format(),
           !is_nil(v),
           do: {k |> query_key, v |> query_argument}
-
     if length(list) > 0 do
       "#{endpoint}?#{to_charlist(URI.encode_query(list))}"
     else
@@ -45,7 +44,7 @@ defmodule StarkCore.Utils.URL do
 
   defp query_argument(value) when is_list(value) or is_tuple(value) do
     value
-    |> Enum.map(fn v -> to_string(v) end)
+    |> Enum.map(fn v -> to_string(elem(v,1)) end)
     |> Enum.join(",")
   end
 
