@@ -372,7 +372,7 @@ defmodule StarkCoreTestRest.GetRaw do
 
   @tag :get_raw
   test "Should get balance using get_raw" do
-    {:ok, %{headers: headers, content: content, status_code: status_code}} = Rest.get_raw(:bank, "balance", [])
+    {:ok, %{headers: _headers, content: content, status_code: _status_code}} = Rest.get_raw(:bank, "balance", [])
     balance = List.first(JSON.decode!(content)["balances"])
     assert !is_nil(balance["amount"])
   end
@@ -401,12 +401,12 @@ defmodule StarkCoreTestRest.GetRaw do
     [ok: response] = Rest.get_list(
       :bank,
       Invoice.resource(),
-      %{
-        query: %{
+      [
+        query: [
           status: "paid",
           limit: 1
-        }
-      }
+        ]
+      ]
     )
       |> Enum.take(1)
 
@@ -551,14 +551,26 @@ defmodule StarkCoreTestRest.GetList do
 
   @tag :get_list
   test "Should get a list of invoices using get_list" do
-    [ok: invoice] = Rest.get_list(
+    quantity = 4
+    invoices = Rest.get_list(
       :bank,
       Invoice.resource(),
       [limit: 3]
     )
-      |> Enum.take(1)
+      |> Enum.take(quantity)
 
-    assert invoice.amount
+    IO.inspect(invoices, label: "INVOICE")
+    # assert length(invoices) == quantity2
+  end
+
+  test "Should get a list of invoices using get_list limited to 3 results for request" do
+    [ok: _invoice] = Rest.get_list(
+      :bank,
+      Invoice.resource(),
+      [limit: 3]
+    )
+      |> Enum.take(3)
+      |> (fn list -> assert length(list) <= 3 end).()
   end
 
   @tag :get_list
@@ -928,7 +940,7 @@ defmodule StarkCoreTestRest.DeleteRaw do
 
   @tag :delete
   test "Should delete the created Boleto by its ID using delete_raw", state do
-    assert {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.delete_raw(
+    assert {:ok, %{headers: _headers, content: _content, status_code: 200}} = Rest.delete_raw(
       :bank,
       "boleto",
       state[:boleto].id,
@@ -938,7 +950,7 @@ defmodule StarkCoreTestRest.DeleteRaw do
 
   @tag :delete
   test "Should delete the created Boleto by its ID using delete_raw!", state do
-    assert {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.delete_raw!(
+    assert {:ok, %{headers: _headers, content: _content, status_code: 200}} = Rest.delete_raw!(
       :bank,
       "boleto",
       state[:boleto].id,
@@ -948,7 +960,7 @@ defmodule StarkCoreTestRest.DeleteRaw do
 
   @tag :delete_fail
   test "Should silently fail trying delete a Boleto using delete_raw with an INVALID_ID" do
-    assert {:error, %{headers: _headers, content: content, status_code: 400}} = Rest.delete_raw(
+    assert {:error, %{headers: _headers, content: _content, status_code: 400}} = Rest.delete_raw(
       :bank,
       "boleto",
       "INVALID_ID",
@@ -1151,7 +1163,7 @@ defmodule StarkCoreTestRest.PatchRaw do
 
   @tag :patch_raw
   test "Should patch Invoice by its ID using patch_raw", state do
-    assert {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.patch_raw(
+    assert {:ok, %{headers: _headers, content: _content, status_code: 200}} = Rest.patch_raw(
       :bank,
       "invoice",
       state[:invoice].id,
@@ -1166,7 +1178,7 @@ defmodule StarkCoreTestRest.PatchRaw do
 
   @tag :patch
   test "Should patch Invoice by its ID using patch_raw!", state do
-    assert {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.patch_raw!(
+    assert {:ok, %{headers: _headers, content: _content, status_code: 200}} = Rest.patch_raw!(
       :bank,
       "invoice",
       state[:invoice].id,

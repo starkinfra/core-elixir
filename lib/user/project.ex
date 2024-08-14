@@ -1,4 +1,4 @@
-defmodule StarkCore.Project do
+defmodule StarkCore.User.Project do
   alias __MODULE__, as: Project
   alias StarkCore.User
 

@@ -2,8 +2,8 @@ defmodule StarkCore.Utils.Check do
   @moduledoc false
 
   alias EllipticCurve.PrivateKey
-  alias StarkCore.Project
-  alias StarkCore.Organization
+  alias StarkCore.User.Project
+  alias StarkCore.User.Organization
 
   def environment(environment) do
     case environment do

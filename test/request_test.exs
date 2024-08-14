@@ -1,7 +1,7 @@
 defmodule StarkCoreTest.Request do
   alias StarkCore.Utils.Request
   alias StarkCore.Utils.JSON
-  alias StarkCore.Project
+  alias StarkCore.User.Project
   use ExUnit.Case
 
   @tag :fetch_get
@@ -10,15 +10,13 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "balance",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        query: %{},
-        prefix: "Joker",
-        timeout: 15,
-        payload: nil,
-        language: "us-EN"
-      }
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      query: [],
+      prefix: "Joker",
+      timeout: 15,
+      payload: nil,
+      language: "us-EN"
     )
     response_string = to_string(response)
     response_decoded = JSON.decode!(response_string)
@@ -35,15 +33,13 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "balance",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        query: %{},
-        prefix: "Joker",
-        timeout: 15,
-        payload: nil,
-        language: "us-EN"
-      }
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      query: [],
+      prefix: "Joker",
+      timeout: 15,
+      payload: nil,
+      language: "us-EN"
     )
 
     response_string = to_string(content)
@@ -71,16 +67,14 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "balance",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        query: %{},
-        prefix: "Joker",
-        timeout: 15,
-        payload: nil,
-        language: "us-EN",
-        user: custom_user
-      }
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      query: [],
+      prefix: "Joker",
+      timeout: 15,
+      payload: nil,
+      language: "us-EN",
+      user: custom_user
     )
     response_string = to_string(response)
     response_decoded = JSON.decode!(response_string)
@@ -98,17 +92,15 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "invoice",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        query: [
-          limit: 1
-        ],
-        prefix: "Joker",
-        timeout: 15,
-        payload: nil,
-        language: "us-EN"
-      }
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      query: [
+        limit: 1
+      ],
+      prefix: "Joker",
+      timeout: 15,
+      payload: nil,
+      language: "us-EN"
     )
     response_string = to_string(response)
     response_decoded = JSON.decode!(response_string)
@@ -123,15 +115,13 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "balancex",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        query: nil,
-        prefix: "Joker",
-        timeout: 15,
-        payload: nil,
-        language: "us-EN"
-      }
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      query: nil,
+      prefix: "Joker",
+      timeout: 15,
+      payload: nil,
+      language: "us-EN"
     )
 
     assert(List.first(response).code == "routeNotFound")
@@ -145,7 +135,7 @@ defmodule StarkCoreTest.Request do
       service,
       :get,
       "balance",
-      %{}
+      []
     )
 
     assert(message == "service #{service} is invalid")
@@ -157,22 +147,20 @@ defmodule StarkCoreTest.Request do
       :bank,
       :post,
       "invoice",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        query: nil,
-        prefix: "Joker",
-        timeout: 15,
-        language: "us-EN",
-        payload: %{
-          invoices: [
-            %{
-              amount: 10000,
-              taxId: "45.059.493/0001-73",
-              name: "core-elixir invoice creation test by fetch"
-            }
-          ]
-        }
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      query: nil,
+      prefix: "Joker",
+      timeout: 15,
+      language: "us-EN",
+      payload: %{
+        invoices: [
+          %{
+            amount: 10000,
+            taxId: "45.059.493/0001-73",
+            name: "core-elixir invoice creation test by fetch"
+          }
+        ]
       }
     )
 

@@ -39,12 +39,15 @@ defmodule StarkCore.Utils.QueryGenerator do
       case function.(query |> Map.put(:limit, limit |> Check.limit()) |> API.cast_json_to_api_format()) do
         {:ok, result} ->
           decoded = JSON.decode!(result)
+          result_quantity = length(result)
 
           yield(
             decoded[key],
             function,
             key,
-            query |> Map.put(:cursor, decoded["cursor"]) |> Map.put(:limit, iterate_limit(limit))
+            query
+              |> Map.put(:cursor, decoded["cursor"])
+              |> Map.put(:limit, iterate_limit(limit, result_quantity))
           )
 
         {:error, error} ->
@@ -70,11 +73,11 @@ defmodule StarkCore.Utils.QueryGenerator do
     end
   end
 
-  defp iterate_limit(limit) when is_nil(limit) do
+  defp iterate_limit(limit, _result_quantity) when is_nil(limit) do
     nil
   end
 
-  defp iterate_limit(limit) do
-    limit - 100
+  defp iterate_limit(limit, result_quantity) do
+    limit - result_quantity
   end
 end

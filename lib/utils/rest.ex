@@ -6,9 +6,9 @@ defmodule StarkCore.Utils.Rest do
   alias StarkCore.Utils.JSON
 
   def getDefaultOptions() do
-    %{
-      payload: nil,
-      query: nil,
+    [
+      payload: %{},
+      query: [],
       user: nil,
       sdk_version: nil,
       api_version: "v2",
@@ -16,11 +16,11 @@ defmodule StarkCore.Utils.Rest do
       timeout: 15,
       prefix: "",
       limit: 100
-    }
+    ]
   end
 
   def getJokerDefaultOptions() do
-    %{
+    [
       payload: nil,
       query: nil,
       user: nil,
@@ -30,7 +30,7 @@ defmodule StarkCore.Utils.Rest do
       timeout: 15,
       prefix: "Joker",
       limit: 100
-    }
+    ]
   end
 
   def get_raw(
@@ -130,8 +130,8 @@ defmodule StarkCore.Utils.Rest do
     {resource_name, resource_maker},
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
-    {getter, query} = get_list_parameters(service, resource_name, opts)
+    merged_options = Keyword.merge(getDefaultOptions(), options)
+    {getter, query} = get_list_parameters(service, resource_name, merged_options)
 
     Stream.resource(
       fn ->
@@ -140,7 +140,8 @@ defmodule StarkCore.Utils.Rest do
             getter,
             API.last_name_plural(resource_name),
             query
-          )
+            )
+            |> IO.inspect(label: "STREAM.START")
         pid
       end,
       fn pid ->
@@ -149,8 +150,12 @@ defmodule StarkCore.Utils.Rest do
           {:ok, element} -> {[{:ok, API.from_api_json(element, resource_maker)}], pid}
           {:error, error} -> {[{:error, error}], pid}
         end
+          |> IO.inspect(label: "STREAM.NEXT")
       end,
-      fn _pid -> nil end
+      fn _pid ->
+        IO.puts("STREAM.AFTER")
+        nil
+      end
     )
   end
 
@@ -188,14 +193,13 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     options
   ) do
-    opts = Map.merge(getDefaultOptions(), Enum.into(options, %{}))
-    query = opts |> Check.query_params()
+    updated_options = Keyword.merge(getDefaultOptions(), options)
+    query = Enum.into(updated_options, %{}) |> Check.query_params()
     {
       make_getter(
         service,
-        query[:user],
         resource_name,
-        opts
+        updated_options
       ),
       query
     }
@@ -203,16 +207,18 @@ defmodule StarkCore.Utils.Rest do
 
   defp make_getter(
     service,
-    user,
     resource_name,
     opts
   ) do
     fn query ->
+      # Move limit to query string
+      updated_opts = Keyword.put(opts, :query, Map.put(query, :limit, opts[:limit]))
+
       Request.fetch(
         service,
         :get,
         API.endpoint(resource_name),
-        opts
+        updated_opts
       )
     end
   end

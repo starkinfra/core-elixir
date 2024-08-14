@@ -1,4 +1,4 @@
-defmodule StarkCore.Organization do
+defmodule StarkCore.User.Organization do
   alias __MODULE__, as: Organization
   alias StarkCore.User
 
