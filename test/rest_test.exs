@@ -101,6 +101,39 @@ defmodule StarkBank.Invoice do
       updated: json[:updated] |> Check.datetime()
     }
   end
+
+  def example_invoice() do
+    %StarkBank.Invoice{
+      amount: 400000,
+      due: get_future_datetime(30),
+      tax_id: "012.345.678-90",
+      name: "Iron Bank S.A.",
+      expiration: 123456789,
+      fine: 2.5,
+      interest: 1.3,
+      discounts: [
+        %{
+          percentage: 10,
+          due: get_future_datetime(20)
+        }
+      ],
+      tags: [
+        "War supply",
+        "Invoice #1234"
+      ],
+      descriptions: [
+        %{
+          key: "Field1",
+          value: "Something"
+        }
+      ]
+    }
+  end
+
+  def get_future_datetime(days) do
+    datetime = DateTime.utc_now
+    DateTime.add(datetime, days*24*60*60, :second)
+  end
 end
 
 defmodule StarkBank.Webhook do
@@ -419,6 +452,7 @@ defmodule StarkCoreTestRest.GetRaw do
 end
 
 defmodule StarkCoreTestRest.PostRaw do
+  alias StarkBank.Invoice
   alias StarkCore.Utils.Rest
   alias StarkCore.Utils.JSON
   use ExUnit.Case
@@ -430,13 +464,11 @@ defmodule StarkCoreTestRest.PostRaw do
       "invoice",
       [
         payload: %{
-          invoices: [
-            %{
-              amount: 15000,
-              taxId: "45.059.493/0001-73",
-              name: "Should create a new Invoice using Rest.post_raw"
-            }
-          ]
+          invoices: [%{
+            amount: 15000,
+            taxId: "45.059.493/0001-73",
+            name: "Should create a new Invoice using Rest.post_raw"
+          }]
         }
       ]
     )
@@ -750,15 +782,13 @@ defmodule StarkCoreTestRest.Post do
       :bank,
       Invoice.resource(),
       [
-        payload: %{
-          invoices: [
-            %{
-              amount: 15000,
-              taxId: "45.059.493/0001-73",
-              name: "Should create a new Invoice using Rest.post"
-            }
-          ]
-        }
+        payload: [
+          %{
+            amount: 15000,
+            taxId: "45.059.493/0001-73",
+            name: "Should create a new Invoice using Rest.post"
+          }
+        ]
       ]
     )
   end
@@ -769,13 +799,11 @@ defmodule StarkCoreTestRest.Post do
       :bank,
       Invoice.resource(),
       [
-        payload: %{
-          invoices: [%{
-            amount: 15000,
-            taxId: "45.059.493/0001-73",
-            name: "Should create a new Invoice using Rest.post"
-          }]
-        }
+        payload: [%{
+          amount: 15000,
+          taxId: "45.059.493/0001-73",
+          name: "Should create a new Invoice using Rest.post"
+        }]
       ]
     )
     invoice_created = List.first(invoices_created)
@@ -788,13 +816,11 @@ defmodule StarkCoreTestRest.Post do
       :bank,
       Invoice.resource(),
       [
-        payload: %{
-          invoices: [%{
-            amount: 15000,
-            tax_id: "10293401239420",
-            name: "Should create a new Invoice using Rest.post"
-          }]
-        }
+        payload: [%{
+          amount: 15000,
+          tax_id: "10293401239420",
+          name: "Should create a new Invoice using Rest.post"
+        }]
       ]
     )
   end
@@ -806,13 +832,11 @@ defmodule StarkCoreTestRest.Post do
         :bank,
         Invoice.resource(),
         [
-          payload: %{
-            invoices: [%{
-              amount: 15000,
-              taxId: "10293401239420",
-              name: "Should create a new Invoice using Rest.post"
-            }]
-          }
+          payload: [%{
+            amount: 15000,
+            taxId: "10293401239420",
+            name: "Should create a new Invoice using Rest.post"
+          }]
         ]
       )
     end
@@ -919,19 +943,17 @@ defmodule StarkCoreTestRest.DeleteRaw do
       :bank,
       Boleto.resource(),
       [
-        payload: %{
-          boletos: [%{
-            amount: 15000,
-            taxId: "45.059.493/0001-73",
-            name: "Should create a new Invoice using Rest.post",
-            streetLine1: "Rua Lagoa Panema, 145",
-            streetLine2: "Casa 2",
-            district: "Bela Vista",
-            city: "São Paulo",
-            stateCode: "SP",
-            zipCode: "02051-050"
-          }]
-        }
+        payload: [%{
+          amount: 15000,
+          taxId: "45.059.493/0001-73",
+          name: "Should create a new Invoice using Rest.post",
+          streetLine1: "Rua Lagoa Panema, 145",
+          streetLine2: "Casa 2",
+          district: "Bela Vista",
+          city: "São Paulo",
+          stateCode: "SP",
+          zipCode: "02051-050"
+        }]
       ]
     )
 
@@ -991,19 +1013,17 @@ defmodule StarkCoreTestRest.Delete do
       :bank,
       Boleto.resource(),
       [
-        payload: %{
-          boletos: [%{
-            amount: 15000,
-            taxId: "45.059.493/0001-73",
-            name: "Should create a new Invoice using Rest.post",
-            streetLine1: "Rua Lagoa Panema, 145",
-            streetLine2: "Casa 2",
-            district: "Bela Vista",
-            city: "São Paulo",
-            stateCode: "SP",
-            zipCode: "02051-050"
-          }]
-        }
+        payload: [%{
+          amount: 15000,
+          taxId: "45.059.493/0001-73",
+          name: "Should create a new Invoice using Rest.post",
+          streetLine1: "Rua Lagoa Panema, 145",
+          streetLine2: "Casa 2",
+          district: "Bela Vista",
+          city: "São Paulo",
+          stateCode: "SP",
+          zipCode: "02051-050"
+        }]
       ]
     )
 
@@ -1063,13 +1083,11 @@ defmodule StarkCoreTestRest.PatchId do
       :bank,
       Invoice.resource(),
       [
-        payload: %{
-          invoices: [%{
-            amount: 15000,
-            taxId: "45.059.493/0001-73",
-            name: "Should create a new Invoice using Rest.post"
-          }]
-        }
+        payload: [%{
+          amount: 15000,
+          taxId: "45.059.493/0001-73",
+          name: "Should create a new Invoice using Rest.post"
+        }]
       ]
     )
 
@@ -1149,13 +1167,11 @@ defmodule StarkCoreTestRest.PatchRaw do
       :bank,
       Invoice.resource(),
       [
-        payload: %{
-          invoices: [%{
-            amount: 15000,
-            taxId: "45.059.493/0001-73",
-            name: "Should create a new Invoice using Rest.post"
-          }]
-        }
+        payload: [%{
+          amount: 15000,
+          taxId: "45.059.493/0001-73",
+          name: "Should create a new Invoice using Rest.post"
+        }]
       ]
     )
     {:ok, [invoice: created_invoice |> hd]}
@@ -1328,9 +1344,7 @@ defmodule StarkCoreTestRest.PostSubResource do
     {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.post_raw(
       :bank,
       "merchant-session",
-      [
-        payload: merchantSessionJson
-      ]
+      payload: merchantSessionJson
     )
 
     {:ok, merchant_session: JSON.decode!(content)["session"]}
@@ -1343,31 +1357,42 @@ defmodule StarkCoreTestRest.PostSubResource do
       "MerchantSession",
       MerchantSessionPurchase.resource(),
       state[:merchant_session]["uuid"],
-      [
-        payload: %{
-          amount: 180,
-          installmentCount: 12,
-          cardExpiration: "2035-01",
-          cardNumber: "5277696455399733",
-          cardSecurityCode: "123",
-          holderName: "Holder Name",
-          holderEmail: "holdeName@email.com",
-          holderPhone: "11111111111",
-          fundingType: "credit",
-          billingCountryCode: "BRA",
-          billingCity: "São Paulo",
-          billingStateCode: "SP",
-          billingStreetLine1: "Rua do Holder Name, 123",
-          billingStreetLine2: "",
-          billingZipCode: "11111-111",
-          metadata: %{
-              userAgent: "Postman",
-              userIp: "255.255.255.255",
-              language: "pt-BR",
-              timezoneOffset: 3
-          }
+      payload: %{
+        amount: 180,
+        installmentCount: 12,
+        cardExpiration: "2035-01",
+        cardNumber: "5277696455399733",
+        cardSecurityCode: "123",
+        holderName: "Holder Name",
+        holderEmail: "holdeName@email.com",
+        holderPhone: "11111111111",
+        fundingType: "credit",
+        billingCountryCode: "BRA",
+        billingCity: "São Paulo",
+        billingStateCode: "SP",
+        billingStreetLine1: "Rua do Holder Name, 123",
+        billingStreetLine2: "",
+        billingZipCode: "11111-111",
+        metadata: %{
+            userAgent: "Postman",
+            userIp: "255.255.255.255",
+            language: "pt-BR",
+            timezoneOffset: 3
         }
-      ]
+      }
     )
+  end
+end
+
+defmodule StarkCoreTestRest.PreparePayload do
+  alias StarkCore.Utils.Rest
+  alias StarkBank.Invoice
+  use ExUnit.Case
+
+  test "Should prepare Payload from Struct" do
+    payload = Rest.prepare_payload("Invoice", [Invoice.example_invoice])
+
+    assert is_list(payload["invoices"])
+    assert payload["invoices"] |> hd |> Map.get("amount") == 400000
   end
 end

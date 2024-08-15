@@ -16,4 +16,4 @@ Given a version number MAJOR.MINOR.PATCH, increment:
 ### Added
 - Add stark-core basic resources and unit tests
 ### Changed
-- starkcore to v0.1.2
+- starkcore to v0.1.3

@@ -68,6 +68,7 @@ defmodule StarkCore.Utils.Rest do
     options
   ) do
     opts = Keyword.merge(getJokerDefaultOptions(), options)
+      |> Keyword.put(:payload, options[:payload])
 
     Request.fetch_raw(
       service,
@@ -141,7 +142,6 @@ defmodule StarkCore.Utils.Rest do
             API.last_name_plural(resource_name),
             query
             )
-            |> IO.inspect(label: "STREAM.START")
         pid
       end,
       fn pid ->
@@ -150,10 +150,8 @@ defmodule StarkCore.Utils.Rest do
           {:ok, element} -> {[{:ok, API.from_api_json(element, resource_maker)}], pid}
           {:error, error} -> {[{:error, error}], pid}
         end
-          |> IO.inspect(label: "STREAM.NEXT")
       end,
       fn _pid ->
-        IO.puts("STREAM.AFTER")
         nil
       end
     )
@@ -300,6 +298,8 @@ defmodule StarkCore.Utils.Rest do
     options
   ) do
     opts = Keyword.merge(getDefaultOptions(), options)
+      |> Keyword.put(:payload, prepare_payload(resource_name, options[:payload]))
+
     case Request.fetch(
       service,
       :post,
@@ -528,6 +528,14 @@ defmodule StarkCore.Utils.Rest do
       {:ok, entity} -> entity
       {:error, errors} -> raise API.errors_to_string(errors)
     end
+  end
+
+  def prepare_payload(resource_name, entities) do
+    Map.put(
+      %{},
+      API.last_name_plural(resource_name),
+      Enum.map(entities, &API.api_json/1)
+    )
   end
 
   def post_sub_resource(
