@@ -48,11 +48,17 @@ defmodule StarkCore.Utils.Request do
     opts
   ) do
     with {:ok, _} <- Check.host(host),
-      {:ok, user} <- Check.user(opts[:user]) do
+    {:ok, user} <- Check.user(opts[:user]) do
       request(
         user,
         method,
-        URL.get_url(host, user.environment, opts[:api_version], path, opts[:query]),
+        URL.get_url(
+          host,
+          user.environment,
+          opts[:api_version],
+          path,
+          opts[:query]
+        ),
         opts[:payload],
         opts[:prefix],
         opts[:sdk_version],

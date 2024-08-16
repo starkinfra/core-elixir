@@ -541,6 +541,7 @@ end
 defmodule StarkCoreTestRest.GetPage do
   alias StarkCore.Utils.Rest
   alias StarkBank.Balance
+  alias StarkBank.Invoice
   use ExUnit.Case
 
   @tag :get_page
@@ -552,6 +553,16 @@ defmodule StarkCoreTestRest.GetPage do
     )
     balance = List.first(response)
     assert !is_nil(balance.amount)
+  end
+
+  @tag :get_page
+  test "Should get invoices using get_page limited to 3" do
+    {:ok, {_, response}} = Rest.get_page(
+      :bank,
+      Invoice.resource(),
+      query: [limit: 3]
+    )
+    assert Enum.count(response) == 3
   end
 
   @tag :get_page
@@ -587,12 +598,10 @@ defmodule StarkCoreTestRest.GetList do
     invoices = Rest.get_list(
       :bank,
       Invoice.resource(),
-      [limit: 3]
+      query: [limit: quantity]
     )
-      |> Enum.take(quantity)
 
-    IO.inspect(invoices, label: "INVOICE")
-    # assert length(invoices) == quantity2
+    assert Enum.count(invoices) == quantity
   end
 
   test "Should get a list of invoices using get_list limited to 3 results for request" do
@@ -650,7 +659,9 @@ defmodule StarkCoreTestRest.GetId do
     [ok: invoice_listed] = Rest.get_list(
       :bank,
       Invoice.resource(),
-      [limit: 3])
+      query: [
+        limit: 3
+      ])
       |> Enum.take(1)
 
     {:ok, invoice} = Rest.get_id(
@@ -667,7 +678,9 @@ defmodule StarkCoreTestRest.GetId do
     [invoice_listed] = Rest.get_list!(
       :bank,
       Invoice.resource(),
-      [limit: 3])
+      query: [
+        limit: 3
+      ])
       |> Enum.take(1)
 
     invoice = Rest.get_id!(
@@ -712,7 +725,9 @@ defmodule StarkCoreTestRest.GetContent do
     [invoice_listed] = Rest.get_list!(
       :bank,
       Invoice.resource(),
-      [limit: 3]
+      query: [
+        limit: 3
+      ]
     )
       |> Enum.take(1)
 
@@ -730,7 +745,9 @@ defmodule StarkCoreTestRest.GetContent do
     [invoice_listed] = Rest.get_list!(
       :bank,
       Invoice.resource(),
-      [limit: 3]
+      query: [
+        limit: 3
+      ]
     )
       |> Enum.take(1)
 

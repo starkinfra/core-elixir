@@ -94,13 +94,13 @@ defmodule StarkCoreTest.Request do
       "invoice",
       sdk_version: "1.0.0",
       api_version: "v2",
-      query: [
-        limit: 1
-      ],
       prefix: "Joker",
       timeout: 15,
       payload: nil,
-      language: "us-EN"
+      language: "us-EN",
+      query: [
+        limit: 1,
+      ]
     )
     response_string = to_string(response)
     response_decoded = JSON.decode!(response_string)
@@ -117,10 +117,8 @@ defmodule StarkCoreTest.Request do
       "balancex",
       sdk_version: "1.0.0",
       api_version: "v2",
-      query: nil,
       prefix: "Joker",
       timeout: 15,
-      payload: nil,
       language: "us-EN"
     )
 
@@ -149,7 +147,6 @@ defmodule StarkCoreTest.Request do
       "invoice",
       sdk_version: "1.0.0",
       api_version: "v2",
-      query: nil,
       prefix: "Joker",
       timeout: 15,
       language: "us-EN",
