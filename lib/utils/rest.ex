@@ -36,21 +36,20 @@ defmodule StarkCore.Utils.Rest do
   def get_raw(
     service,
     path,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getJokerDefaultOptions(), options)
     Request.fetch_raw(
       service,
       :get,
       path,
-      opts
+      options
     )
   end
 
   def get_raw!(
     service,
     path,
-    options
+    options \\ %{}
   ) do
     case get_raw(
       service,
@@ -67,14 +66,11 @@ defmodule StarkCore.Utils.Rest do
     path,
     options
   ) do
-    opts = Keyword.merge(getJokerDefaultOptions(), options)
-      |> Keyword.put(:payload, options[:payload])
-
     Request.fetch_raw(
       service,
       :post,
       path,
-      opts
+      options
     )
   end
 
@@ -93,18 +89,17 @@ defmodule StarkCore.Utils.Rest do
     end
   end
 
-  @spec get_page(atom(), {String.t(), Function.t()}, list()) :: {:ok, any()} | {:error, any()}
+  @spec get_page(atom(), {String.t(), fun()}, map()) :: {:ok, any()} | {:error, any()}
   def get_page(
     service,
     {resource_name, resource_maker},
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :get,
       "#{API.endpoint(resource_name)}",
-      opts
+      options
     ) do
       {:ok, response} -> {:ok, process_page_response(resource_name, resource_maker, response)}
       {:error, errors} -> {:error, errors}
@@ -114,7 +109,7 @@ defmodule StarkCore.Utils.Rest do
   def get_page!(
     service,
     {resource_name, resource_maker},
-    options
+    options \\ %{}
   ) do
     case get_page(
       service,
@@ -129,10 +124,9 @@ defmodule StarkCore.Utils.Rest do
   def get_list(
     service,
     {resource_name, resource_maker},
-    options
+    options \\ %{}
   ) do
-    merged_options = Keyword.merge(getDefaultOptions(), options)
-    {getter, query} = get_list_parameters(service, resource_name, merged_options)
+    {getter, query} = get_list_parameters(service, resource_name, options)
 
     Stream.resource(
       fn ->
@@ -160,10 +154,9 @@ defmodule StarkCore.Utils.Rest do
   def get_list!(
     service,
     {resource_name, resource_maker},
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
-    {getter, query} = get_list_parameters(service, resource_name, opts)
+    {getter, query} = get_list_parameters(service, resource_name, options)
 
     Stream.resource(
       fn ->
@@ -191,29 +184,30 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     options
   ) do
-    updated_options = Keyword.merge(getDefaultOptions(), options)
-    query = updated_options[:query] |> Check.query_params()
+    query = Map.get(options,:query,%{}) |> Check.query_params
+    limit = Map.get(options, :limit, nil)
     {
       make_getter(
         service,
         resource_name,
-        updated_options
+        options
       ),
       query
+        |> Map.put(:limit, limit)
     }
   end
 
   defp make_getter(
     service,
     resource_name,
-    opts
+    options
   ) do
     fn query ->
       Request.fetch(
         service,
         :get,
         API.endpoint(resource_name),
-        Keyword.put(opts, :query, query)
+        Map.put(options, :query, query)
       )
     end
   end
@@ -222,15 +216,13 @@ defmodule StarkCore.Utils.Rest do
     service,
     {resource_name, resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
-
     case Request.fetch(
       service,
       :get,
       "#{API.endpoint(resource_name)}/#{id}",
-      opts
+      options
     ) do
       {:ok, response} -> {:ok, process_single_response(response, resource_name, resource_maker)}
       {:error, errors} -> {:error, errors}
@@ -241,7 +233,7 @@ defmodule StarkCore.Utils.Rest do
     service,
     {resource_name, resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
     case get_id(
       service,
@@ -259,14 +251,13 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     id,
     sub_resource_name,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :get,
       "#{API.endpoint(resource_name)}/#{id}/#{sub_resource_name}",
-      opts
+      options
     ) do
       {:ok, content} -> {:ok, content}
       {:error, errors} -> {:error, errors}
@@ -278,7 +269,7 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     id,
     sub_resource_name,
-    options
+    options \\ %{}
   ) do
     case get_content(
       service,
@@ -297,8 +288,8 @@ defmodule StarkCore.Utils.Rest do
     {resource_name, resource_maker},
     options
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
-      |> Keyword.put(:payload, prepare_payload(resource_name, options[:payload]))
+    opts = options
+      |> Map.put(:payload, prepare_payload(resource_name, options[:payload]))
 
     case Request.fetch(
       service,
@@ -331,12 +322,11 @@ defmodule StarkCore.Utils.Rest do
     {resource_name, resource_maker},
     options
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :post,
       "#{API.endpoint(resource_name)}",
-      opts
+      options
     ) do
       {:ok, response} -> {:ok, process_single_response(response, resource_name, resource_maker)}
       {:error, errors} -> {:error, errors}
@@ -362,14 +352,13 @@ defmodule StarkCore.Utils.Rest do
     service,
     {resource_name, resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :delete,
       "#{API.endpoint(resource_name)}/#{id}",
-      opts
+      options
     ) do
       {:ok, response} -> {:ok, process_single_response(response, resource_name, resource_maker)}
       {:error, errors} -> {:error, errors}
@@ -380,7 +369,7 @@ defmodule StarkCore.Utils.Rest do
     service,
     {resource_name, resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
     case delete_id(
       service,
@@ -397,14 +386,13 @@ defmodule StarkCore.Utils.Rest do
     service,
     resource_name,
     id,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
     Request.fetch_raw(
       service,
       :delete,
       "#{API.endpoint(resource_name)}/#{id}",
-      opts
+      options
     )
   end
 
@@ -412,7 +400,7 @@ defmodule StarkCore.Utils.Rest do
     service,
     resource_name,
     id,
-    options
+    options \\ %{}
   ) do
     case delete_raw(
       service,
@@ -429,14 +417,13 @@ defmodule StarkCore.Utils.Rest do
     service,
     {resource_name, resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :patch,
       "#{API.endpoint(resource_name)}/#{id}",
-      opts
+      options
     ) do
       {:ok, response} -> {:ok, process_single_response(response, resource_name, resource_maker)}
       {:error, errors} -> {:error, errors}
@@ -447,13 +434,13 @@ defmodule StarkCore.Utils.Rest do
     service,
     {resource_name, resource_maker},
     id,
-    payload
+    options \\ %{}
   ) do
     case patch_id(
       service,
       {resource_name, resource_maker},
       id,
-      payload
+      options
     ) do
       {:ok, entity} -> entity
       {:error, errors} -> raise API.errors_to_string(errors)
@@ -464,14 +451,13 @@ defmodule StarkCore.Utils.Rest do
     service,
     resource_name,
     id,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getJokerDefaultOptions(), options)
     Request.fetch_raw(
       service,
       :patch,
       "#{resource_name}/#{id}",
-      opts
+      options
     )
   end
 
@@ -479,7 +465,7 @@ defmodule StarkCore.Utils.Rest do
     service,
     resource_name,
     id,
-    options
+    options \\ %{}
   ) do
     case patch_raw(
       service,
@@ -497,14 +483,13 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     {sub_resource_name, sub_resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
     case Request.fetch(
       service,
       :get,
       "#{API.endpoint(resource_name)}/#{id}/#{API.endpoint(sub_resource_name)}",
-      opts
+      options
     ) do
       {:ok, response} -> {:ok, process_single_response(response, sub_resource_name, sub_resource_maker)}
       {:error, errors} -> {:error, errors}
@@ -516,7 +501,7 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     {sub_resource_name, sub_resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
     case get_sub_resource(
       service,
@@ -543,15 +528,14 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     {sub_resource_name, sub_resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
-    opts = Keyword.merge(getDefaultOptions(), options)
     url = "#{API.endpoint(resource_name)}/#{id}/#{API.endpoint(sub_resource_name)}"
     case Request.fetch(
       service,
       :post,
       url,
-      opts
+      options
     ) do
       {:ok, response} -> {:ok, process_single_response(response, sub_resource_name, sub_resource_maker)}
       {:error, errors} -> {:error, errors}
@@ -563,7 +547,7 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     {sub_resource_name, sub_resource_maker},
     id,
-    options
+    options \\ %{}
   ) do
     case post_sub_resource(
       service,

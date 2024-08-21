@@ -76,16 +76,16 @@ defmodule StarkCore.Utils.Check do
 
   defp fill_limit(options) do
     if !options[:limit] do
-      Keyword.put(options, :limit, nil)
+      Map.put(options, :limit, nil)
     end
     options
   end
 
   defp fill_date_field(options, field) do
     if !options[field] do
-      Keyword.put(options, field, nil)
+      Map.put(options, field, nil)
     else
-      Keyword.update!(options, field, &date/1)
+      Map.update!(options, field, &date/1)
     end
   end
 
