@@ -8,16 +8,17 @@ defmodule StarkCore.Utils.Request do
   alias StarkCore.User.Organization
   alias StarkCore.Error
 
-  @type requestOptions :: [
+  @type requestOptions :: %{
     payload: map(),
-    query: list(),
+    query: map(),
     user: Project.t() | Organization.t(),
     sdk_version: String.t(),
     api_version: String.t(),
     language: String.t(),
     timeout: number(),
-    prefix: String.t()
-  ]
+    prefix: String.t(),
+    sdk_name: String.t()
+  }
 
   @type rawResponse :: %{
     status_code: non_neg_integer(),
@@ -26,48 +27,56 @@ defmodule StarkCore.Utils.Request do
   }
 
 
-  @spec fetch(
-    String.t(),
-    atom(),
-    String.t(),
-    [
-      payload: map(),
-      query: list(),
-      user: Project.t() | Organization.t(),
-      sdk_version: String.t(),
-      api_version: String.t(),
-      language: String.t(),
-      timeout: number(),
-      prefix: String.t()
-    ]
-  ) :: {:ok, String.t()} | {:error, [Error.t()]}
-  def fetch(
-    host,
-    method,
-    path,
-    opts
-  ) do
+  def fetch(host, method, path, options) do
+    %{
+      payload: payload,
+      query: query,
+      version: version,
+      user: user_parameter,
+      prefix: prefix,
+      sdk_version: sdk_version,
+      language: language,
+      timeout_seconds: timeout_seconds,
+      limit: limit,
+      sdk_name: sdk_name
+    } = Enum.into(
+      options,
+      %{
+        payload: nil,
+        query: %{},
+        version: ~c"v2",
+        user: nil,
+        prefix: "",
+        sdk_version: Mix.Project.config()[:version],
+        language: nil,
+        timeout_seconds: 15,
+        limit: nil,
+        sdk_name: "Core"
+      }
+    )
+
     with {:ok, _} <- Check.host(host),
-    {:ok, user} <- Check.user(opts[:user]) do
+      {:ok, user} <- Check.user(user_parameter)
+    do
       request(
         user,
         method,
         URL.get_url(
           host,
           user.environment,
-          opts[:api_version],
+          version,
           path,
-          opts[:query]
+          query
+            |> Map.put(:limit, limit)
         ),
-        opts[:payload],
-        opts[:prefix],
-        opts[:sdk_version],
-        opts[:language],
-        opts[:timeout]
+        payload,
+        prefix,
+        sdk_version,
+        language,
+        timeout_seconds,
+        sdk_name
       )
         |> process_response
-    else
-      {:error, message} -> {:error, message}
     end
   end
 
@@ -82,25 +91,57 @@ defmodule StarkCore.Utils.Request do
     host,
     method,
     path,
-    opts
+    options
   ) do
+    %{
+      payload: payload,
+      query: query,
+      version: version,
+      user: user_parameter,
+      prefix: prefix,
+      sdk_version: sdk_version,
+      language: language,
+      timeout_seconds: timeout_seconds,
+      limit: limit,
+      sdk_name: sdk_name
+    } = Enum.into(
+      options,
+      %{
+        payload: nil,
+        query: %{},
+        version: ~c"v2",
+        user: nil,
+        prefix: nil,
+        sdk_version: Mix.Project.config()[:version],
+        language: nil,
+        timeout_seconds: 15,
+        limit: nil,
+        sdk_name: "core"
+      }
+    )
+
     with {:ok, _} <- Check.host(host),
-      {:ok, user} <- Check.user(opts[:user])
+      {:ok, user} <- Check.user(user_parameter)
     do
-      # {status_code, response_body, headers} =
       request(
         user,
         method,
-        URL.get_url(host, user.environment, opts[:api_version], path, opts[:query]),
-        opts[:payload],
-        opts[:prefix],
-        opts[:sdk_version],
-        opts[:language],
-        opts[:timeout]
+        URL.get_url(
+          host,
+          user.environment,
+          version,
+          path,
+          query
+            |> Map.put(:limit, limit)
+        ),
+        payload,
+        prefix,
+        sdk_version,
+        language,
+        timeout_seconds,
+        sdk_name
       )
         |> process_raw_response
-
-      # {:ok, %{status_code: status_code, headers: headers, content: response_body}}
     else
       {:error, message} -> {:error, message}
     end
@@ -115,7 +156,8 @@ defmodule StarkCore.Utils.Request do
     prefix,
     sdk_version,
     language,
-    timeout_seconds
+    timeout_seconds,
+    sdk_name
   ) do
     Application.ensure_all_started(:inets)
     Application.ensure_all_started(:ssl)
@@ -129,7 +171,7 @@ defmodule StarkCore.Utils.Request do
 
     {:ok, {{~c"HTTP/1.1", status_code, _message}, headers, response_body}} = :httpc.request(
       method,
-      get_request_params(user, url, payload, prefix, sdk_version, language),
+      get_request_params(user, url, payload, prefix, sdk_version, language, sdk_name) |> IO.inspect(label: "REQUEST PARAMS"),
       http_request_opts,
       []
     )
@@ -137,32 +179,32 @@ defmodule StarkCore.Utils.Request do
   end
 
 
-  defp get_request_params(user, url, body, prefix, sdk_version, language) when is_nil(body) do
+  defp get_request_params(user, url, body, prefix, sdk_version, language, sdk_name) when is_nil(body) do
     {
       String.to_charlist(URI.encode(url)),
-      get_headers(user, "", prefix, sdk_version, language)
+      get_headers(user, "", prefix, sdk_version, language, sdk_name)
     }
   end
 
 
-  defp get_request_params(user, url, body, prefix, sdk_version, language) do
+  defp get_request_params(user, url, body, prefix, sdk_version, language, sdk_name) do
       {
         String.to_charlist(url),
-        get_headers(user, body, prefix, sdk_version, language),
+        get_headers(user, body, prefix, sdk_version, language, sdk_name),
         ~c"text/plain",
         JSON.encode!(body)
       }
   end
 
 
-  defp get_headers(user, body, prefix, sdk_version, language) when is_map(body) do
+  defp get_headers(user, body, prefix, sdk_version, language, sdk_name) when is_map(body) do
     body_string = JSON.encode!(body)
 
-    get_headers(user, body_string, prefix, sdk_version, language)
+    get_headers(user, body_string, prefix, sdk_version, language, sdk_name)
   end
 
 
-  defp get_headers(user, body, prefix, sdk_version, language) when is_binary(body) do
+  defp get_headers(user, body, prefix, sdk_version, language, sdk_name) when is_binary(body) do
     access_time = DateTime.utc_now() |> DateTime.to_unix(:second)
 
     signature =
@@ -170,9 +212,9 @@ defmodule StarkCore.Utils.Request do
       |> EllipticCurve.Ecdsa.sign(user.private_key)
       |> EllipticCurve.Signature.toBase64()
 
-    user_agent = case String.length(prefix) > 0 do
-      true -> ~c"#{prefix}-Elixir-#{System.version()}-SDK-#{sdk_version}"
-      false -> ~c"Elixir-#{System.version()}-SDK-#{sdk_version}"
+    user_agent = case String.length(prefix || "") > 0 do
+      true -> ~c"#{prefix}-Elixir-#{System.version()}-SDK-#{sdk_name}-#{sdk_version}"
+      false -> ~c"Elixir-#{System.version()}-SDK-#{sdk_name}-#{sdk_version}"
     end
 
     [
