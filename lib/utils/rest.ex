@@ -5,101 +5,19 @@ defmodule StarkCore.Utils.Rest do
   alias StarkCore.Utils.API
   alias StarkCore.Utils.JSON
 
-  def getDefaultOptions() do
-    [
-      payload: nil,
-      query: [],
-      user: nil,
-      sdk_version: nil,
-      api_version: "v2",
-      language: "en-US",
-      timeout: 15,
-      prefix: "",
-      limit: 100
-    ]
-  end
-
-  def getJokerDefaultOptions() do
-    [
-      payload: nil,
-      query: nil,
-      user: nil,
-      sdk_version: Mix.Project.config()[:version],
-      api_version: "v2",
-      language: "en-US",
-      timeout: 15,
-      prefix: "Joker",
-      limit: 100
-    ]
-  end
-
-  def get_raw(
-    service,
-    path,
-    options \\ %{}
-  ) do
-    Request.fetch_raw(
-      service,
-      :get,
-      path,
-      options
-    )
-  end
-
-  def get_raw!(
-    service,
-    path,
-    options \\ %{}
-  ) do
-    case get_raw(
-      service,
-      path,
-      options
-    ) do
-      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
-      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
-    end
-  end
-
-  def post_raw(
-    service,
-    path,
-    options
-  ) do
-    Request.fetch_raw(
-      service,
-      :post,
-      path,
-      options
-    )
-  end
-
-  def post_raw!(
-    service,
-    path,
-    options
-  ) do
-    case post_raw(
-      service,
-      path,
-      options
-    ) do
-      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
-      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
-    end
-  end
-
-  @spec get_page(atom(), {String.t(), fun()}, map()) :: {:ok, any()} | {:error, any()}
   def get_page(
     service,
     {resource_name, resource_maker},
-    options \\ %{}
+    options \\ []
   ) do
     case Request.fetch(
       service,
       :get,
       "#{API.endpoint(resource_name)}",
-      options
+      query: Enum.into(options, %{})
+      |> Map.delete(:user)
+      |> API.cast_json_to_api_format(),
+      user: options[:user]
     ) do
       {:ok, response} -> {:ok, process_page_response(resource_name, resource_maker, response)}
       {:error, errors} -> {:error, errors}
@@ -124,9 +42,9 @@ defmodule StarkCore.Utils.Rest do
   def get_list(
     service,
     {resource_name, resource_maker},
-    options \\ %{}
+    options \\ []
   ) do
-    {getter, query} = get_list_parameters(service, resource_name, options)
+    {getter, query} = get_list_parameters(service, resource_name, options |> Enum.into(%{}))
 
     Stream.resource(
       fn ->
@@ -154,9 +72,9 @@ defmodule StarkCore.Utils.Rest do
   def get_list!(
     service,
     {resource_name, resource_maker},
-    options \\ %{}
+    options \\ []
   ) do
-    {getter, query} = get_list_parameters(service, resource_name, options)
+    {getter, query} = get_list_parameters(service, resource_name, options |> Enum.into(%{}))
 
     Stream.resource(
       fn ->
@@ -184,30 +102,25 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     options
   ) do
-    query = Map.get(options,:query,%{}) |> Check.query_params
-    limit = Map.get(options, :limit, nil)
+    query = Enum.into(options |> Check.options(), %{})
     {
-      make_getter(
-        service,
-        resource_name,
-        options
-      ),
-      query
-        |> Map.put(:limit, limit)
+      make_getter(query[:user], resource_name, service),
+      query |> Map.delete(:user) |> Map.put(:limit, query[:limit])
     }
   end
 
   defp make_getter(
-    service,
+    user,
     resource_name,
-    options
+    service
   ) do
     fn query ->
       Request.fetch(
         service,
         :get,
         API.endpoint(resource_name),
-        Map.put(options, :query, query)
+        query: query,
+        user: user
       )
     end
   end
@@ -288,14 +201,14 @@ defmodule StarkCore.Utils.Rest do
     {resource_name, resource_maker},
     options
   ) do
-    opts = options
-      |> Map.put(:payload, prepare_payload(resource_name, options[:payload]))
+    user = options[:user]
 
     case Request.fetch(
       service,
       :post,
       "#{API.endpoint(resource_name)}",
-      opts
+      payload: prepare_payload(resource_name, options[:payload]),
+      user: user
     ) do
       {:ok, response} -> {:ok, process_response(resource_name, resource_maker, response)}
       {:error, errors} -> {:error, errors}
@@ -382,37 +295,6 @@ defmodule StarkCore.Utils.Rest do
     end
   end
 
-  def delete_raw(
-    service,
-    resource_name,
-    id,
-    options \\ %{}
-  ) do
-    Request.fetch_raw(
-      service,
-      :delete,
-      "#{API.endpoint(resource_name)}/#{id}",
-      options
-    )
-  end
-
-  def delete_raw!(
-    service,
-    resource_name,
-    id,
-    options \\ %{}
-  ) do
-    case delete_raw(
-      service,
-      resource_name,
-      id,
-      options
-    ) do
-      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
-      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
-    end
-  end
-
   def patch_id(
     service,
     {resource_name, resource_maker},
@@ -447,49 +329,19 @@ defmodule StarkCore.Utils.Rest do
     end
   end
 
-  def patch_raw(
-    service,
-    resource_name,
-    id,
-    options \\ %{}
-  ) do
-    Request.fetch_raw(
-      service,
-      :patch,
-      "#{resource_name}/#{id}",
-      options
-    )
-  end
-
-  def patch_raw!(
-    service,
-    resource_name,
-    id,
-    options \\ %{}
-  ) do
-    case patch_raw(
-      service,
-      resource_name,
-      id,
-      options
-    ) do
-      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
-      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
-    end
-  end
-
   def get_sub_resource(
     service,
     resource_name,
     {sub_resource_name, sub_resource_maker},
     id,
-    options \\ %{}
+    options \\ []
   ) do
     case Request.fetch(
       service,
       :get,
       "#{API.endpoint(resource_name)}/#{id}/#{API.endpoint(sub_resource_name)}",
-      options
+      query: options |> Keyword.delete(:user) |> API.cast_json_to_api_format(),
+      user: options[:user]
     ) do
       {:ok, response} -> {:ok, process_single_response(response, sub_resource_name, sub_resource_maker)}
       {:error, errors} -> {:error, errors}
@@ -501,7 +353,7 @@ defmodule StarkCore.Utils.Rest do
     resource_name,
     {sub_resource_name, sub_resource_maker},
     id,
-    options \\ %{}
+    options \\ []
   ) do
     case get_sub_resource(
       service,
@@ -558,6 +410,124 @@ defmodule StarkCore.Utils.Rest do
     ) do
       {:ok, entity} -> entity
       {:error, errors} -> raise API.errors_to_string(errors)
+    end
+  end
+
+  def get_raw(
+    service,
+    path,
+    options \\ %{}
+  ) do
+    Request.fetch_raw(
+      service,
+      :get,
+      path,
+      options
+    )
+  end
+
+  def get_raw!(
+    service,
+    path,
+    options \\ %{}
+  ) do
+    case get_raw(
+      service,
+      path,
+      options
+    ) do
+      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
+      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
+    end
+  end
+
+  def post_raw(
+    service,
+    path,
+    options
+  ) do
+    Request.fetch_raw(
+      service,
+      :post,
+      path,
+      options
+    )
+  end
+
+  def post_raw!(
+    service,
+    path,
+    options
+  ) do
+    case post_raw(
+      service,
+      path,
+      options
+    ) do
+      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
+      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
+    end
+  end
+
+  def patch_raw(
+    service,
+    resource_name,
+    id,
+    options \\ %{}
+  ) do
+    Request.fetch_raw(
+      service,
+      :patch,
+      "#{resource_name}/#{id}",
+      options
+    )
+  end
+
+  def patch_raw!(
+    service,
+    resource_name,
+    id,
+    options \\ %{}
+  ) do
+    case patch_raw(
+      service,
+      resource_name,
+      id,
+      options
+    ) do
+      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
+      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
+    end
+  end
+
+  def delete_raw(
+    service,
+    resource_name,
+    id,
+    options \\ %{}
+  ) do
+    Request.fetch_raw(
+      service,
+      :delete,
+      "#{API.endpoint(resource_name)}/#{id}",
+      options
+    )
+  end
+
+  def delete_raw!(
+    service,
+    resource_name,
+    id,
+    options \\ %{}
+  ) do
+    case delete_raw(
+      service,
+      resource_name,
+      id,
+      options
+    ) do
+      {:ok, %{headers: headers, content: content, status_code: status_code}} -> {:ok, %{headers: headers, content: content, status_code: status_code}}
+      {:error, %{headers: _headers, content: content, status_code: _status_code}} -> raise API.errors_to_string(content)
     end
   end
 
