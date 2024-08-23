@@ -10,11 +10,9 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "balance",
-      %{
-        api_version: "v2",
-        timeout: 15,
-        language: "us-EN"
-      }
+      api_version: "v2",
+      timeout: 15,
+      language: "us-EN"
     )
     response_string = to_string(response)
     response_decoded = JSON.decode!(response_string)
@@ -31,9 +29,7 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "balance",
-      %{
-        language: "us-EN"
-      }
+      language: "pt-BR"
     )
 
     response_string = to_string(content)
@@ -61,17 +57,13 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "balance",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        query: %{},
-        prefix: "Joker",
-        timeout: 15,
-        payload: nil,
-        language: "us-EN",
-        user: custom_user
-      }
-    )
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      prefix: "Joker",
+      timeout: 15,
+      language: "pt-BR",
+      user: custom_user
+    ) |> IO.inspect()
     response_string = to_string(response)
     response_decoded = JSON.decode!(response_string)
     balances = response_decoded["balances"]
@@ -88,16 +80,15 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "invoice",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        prefix: "Joker",
-        timeout: 15,
-        payload: nil,
-        language: "us-EN",
-        limit: 1,
-        query: %{}
-      }
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      prefix: "Joker",
+      timeout: 15,
+      payload: nil,
+      language: "us-EN",
+      query: [
+        limit: 1
+      ]
     )
     response_string = to_string(response)
     response_decoded = JSON.decode!(response_string)
@@ -112,13 +103,11 @@ defmodule StarkCoreTest.Request do
       :bank,
       :get,
       "balancex",
-      %{
-        sdk_version: "1.0.0",
-        version: "v2",
-        prefix: "Joker",
-        timeout: 15,
-        language: "us-EN"
-      }
+      sdk_version: "1.0.0",
+      version: "v2",
+      prefix: "Joker",
+      timeout: 15,
+      language: "pt-BR"
     )
 
     assert(List.first(response).code == "routeNotFound")
@@ -131,8 +120,7 @@ defmodule StarkCoreTest.Request do
     {:error, message} = Request.fetch(
       service,
       :get,
-      "balance",
-      %{}
+      "balance"
     )
 
     assert(message == "service #{service} is invalid")
@@ -144,21 +132,19 @@ defmodule StarkCoreTest.Request do
       :bank,
       :post,
       "invoice",
-      %{
-        sdk_version: "1.0.0",
-        api_version: "v2",
-        prefix: "Joker",
-        timeout: 15,
-        language: "us-EN",
-        payload: %{
-          invoices: [
-            %{
-              amount: 10000,
-              taxId: "45.059.493/0001-73",
-              name: "core-elixir invoice creation test by fetch"
-            }
-          ]
-        }
+      sdk_version: "1.0.0",
+      api_version: "v2",
+      prefix: "Joker",
+      timeout: 15,
+      language: "pt-BR",
+      payload: %{
+        invoices: [
+          %{
+            amount: 10000,
+            taxId: "45.059.493/0001-73",
+            name: "core-elixir invoice creation test by fetch"
+          }
+        ]
       }
     )
 

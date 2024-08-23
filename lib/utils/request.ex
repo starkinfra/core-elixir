@@ -27,7 +27,12 @@ defmodule StarkCore.Utils.Request do
   }
 
 
-  def fetch(host, method, path, options) do
+  def fetch(
+    host,
+    method,
+    path,
+    options \\ []
+  ) do
     %{
       payload: payload,
       query: query,
@@ -67,7 +72,6 @@ defmodule StarkCore.Utils.Request do
           version,
           path,
           query
-            |> Map.put(:limit, limit)
         ),
         payload,
         prefix,
@@ -80,18 +84,11 @@ defmodule StarkCore.Utils.Request do
     end
   end
 
-
-  @spec fetch_raw(
-    atom(),
-    atom(),
-    String.t(),
-    requestOptions()
-  ) :: {:ok, rawResponse()} | {:error, String.t()}
   def fetch_raw(
     host,
     method,
     path,
-    options
+    options \\ []
   ) do
     %{
       payload: payload,
@@ -171,7 +168,7 @@ defmodule StarkCore.Utils.Request do
 
     {:ok, {{~c"HTTP/1.1", status_code, _message}, headers, response_body}} = :httpc.request(
       method,
-      get_request_params(user, url, payload, prefix, sdk_version, language, sdk_name) |> IO.inspect(label: "REQUEST PARAMS"),
+      get_request_params(user, url, payload, prefix, sdk_version, language, sdk_name),
       http_request_opts,
       []
     )

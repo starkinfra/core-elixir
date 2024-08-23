@@ -67,6 +67,14 @@ defmodule StarkCore.Utils.Check do
     end
   end
 
+  def options(options) do
+    options
+    |> Enum.into(%{})
+    |> fill_limit()
+    |> fill_date_field(:after)
+    |> fill_date_field(:before)
+  end
+
   def query_params(query) do
     query
     |> fill_limit()

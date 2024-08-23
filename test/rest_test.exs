@@ -436,9 +436,7 @@ defmodule StarkCoreTestRest.GetRaw do
       Invoice.resource(),
       %{
         limit: 1,
-        query: %{
-          status: "paid",
-        }
+        status: "paid",
       }
     )
       |> Enum.take(1)
@@ -558,9 +556,8 @@ defmodule StarkCoreTestRest.GetPage do
     {:ok, {_, response}} = Rest.get_page(
       :bank,
       Invoice.resource(),
-      %{
-        limit: 3
-      }
+      limit: 3,
+      status: "paid"
     )
     assert Enum.count(response) == 3
   end
@@ -596,9 +593,7 @@ defmodule StarkCoreTestRest.GetList do
     invoices = Rest.get_list(
       :bank,
       Invoice.resource(),
-      %{
-        limit: quantity
-      }
+      limit: quantity
     )
 
     assert Enum.count(invoices) == quantity
@@ -608,9 +603,7 @@ defmodule StarkCoreTestRest.GetList do
     Rest.get_list(
       :bank,
       Invoice.resource(),
-      %{
-        limit: 3
-      }
+      limit: 3
     )
     |> Enum.take(3)
     |> (fn list -> assert length(list) <= 3 end).()
@@ -621,9 +614,7 @@ defmodule StarkCoreTestRest.GetList do
     assert [error: _invoice] = Rest.get_list(
       :bank,
       Balance.non_existent_resource(),
-      %{
-        limit: 3
-      }
+      limit: 3
     )
     |> Enum.take(1)
   end
@@ -633,9 +624,7 @@ defmodule StarkCoreTestRest.GetList do
     [invoice] = Rest.get_list!(
       :bank,
       Invoice.resource(),
-      %{
-        limit: 3
-      }
+      limit: 3
     )
     |> Enum.take(1)
 
@@ -648,9 +637,7 @@ defmodule StarkCoreTestRest.GetList do
       Rest.get_list!(
         :bank,
         Balance.non_existent_resource(),
-        %{
-          limit: 3
-        }
+        limit: 3
       )
         |> Enum.take(1)
     end
@@ -667,9 +654,7 @@ defmodule StarkCoreTestRest.GetId do
     [ok: invoice_listed] = Rest.get_list(
       :bank,
       Invoice.resource(),
-      %{
-        limit: 3
-      }
+      limit: 3
     )
     |> Enum.take(1)
 
@@ -687,9 +672,7 @@ defmodule StarkCoreTestRest.GetId do
     [invoice_listed] = Rest.get_list!(
       :bank,
       Invoice.resource(),
-      %{
-        limit: 3
-      }
+      limit: 3
       )
       |> Enum.take(1)
 
@@ -707,8 +690,8 @@ defmodule StarkCoreTestRest.GetId do
     assert {:error, _} = Rest.get_id(
       :bank,
       Invoice.resource(),
-      "123412341234",
-      [])
+      "123412341234"
+    )
   end
 
   @tag :get_id
@@ -717,8 +700,7 @@ defmodule StarkCoreTestRest.GetId do
       Rest.get_id!(
         :bank,
         Invoice.resource(),
-        "123412341234",
-        []
+        "123412341234"
       )
     end
   end
@@ -735,9 +717,7 @@ defmodule StarkCoreTestRest.GetContent do
     [invoice_listed] = Rest.get_list!(
       :bank,
       Invoice.resource(),
-      %{
-        limit: 3
-      }
+      limit: 3
     )
       |> Enum.take(1)
 
@@ -754,7 +734,7 @@ defmodule StarkCoreTestRest.GetContent do
     [invoice_listed] = Rest.get_list!(
       :bank,
       Invoice.resource(),
-      %{limit: 3}
+      limit: 3
     )
       |> Enum.take(1)
 
@@ -801,15 +781,13 @@ defmodule StarkCoreTestRest.Post do
     assert {:ok, _} = Rest.post(
       :bank,
       Invoice.resource(),
-      %{
-        payload: [
-          %{
-            amount: 15000,
-            taxId: "45.059.493/0001-73",
-            name: "Should create a new Invoice using Rest.post"
-          }
-        ]
-      }
+      payload: [
+        %{
+          amount: 15000,
+          taxId: "45.059.493/0001-73",
+          name: "Should create a new Invoice using Rest.post"
+        }
+      ]
     )
   end
 
@@ -818,13 +796,11 @@ defmodule StarkCoreTestRest.Post do
     invoices_created = Rest.post!(
       :bank,
       Invoice.resource(),
-      %{
-        payload: [%{
-          amount: 15000,
-          taxId: "45.059.493/0001-73",
-          name: "Should create a new Invoice using Rest.post"
-        }]
-      }
+      payload: [%{
+        amount: 15000,
+        taxId: "45.059.493/0001-73",
+        name: "Should create a new Invoice using Rest.post"
+      }]
     )
     invoice_created = List.first(invoices_created)
     assert invoice_created.amount > 0
@@ -835,13 +811,11 @@ defmodule StarkCoreTestRest.Post do
     assert {:error, _} = Rest.post(
       :bank,
       Invoice.resource(),
-      %{
-        payload: [%{
-          amount: 15000,
-          tax_id: "10293401239420",
-          name: "Should create a new Invoice using Rest.post"
-        }]
-      }
+      payload: [%{
+        amount: 15000,
+        tax_id: "10293401239420",
+        name: "Should create a new Invoice using Rest.post"
+      }]
     )
   end
 
@@ -851,13 +825,11 @@ defmodule StarkCoreTestRest.Post do
       Rest.post!(
         :bank,
         Invoice.resource(),
-        %{
-          payload: [%{
-            amount: 15000,
-            taxId: "10293401239420",
-            name: "Should create a new Invoice using Rest.post"
-          }]
-        }
+        payload: [%{
+          amount: 15000,
+          taxId: "10293401239420",
+          name: "Should create a new Invoice using Rest.post"
+        }]
       )
     end
   end
@@ -893,13 +865,11 @@ defmodule StarkCoreTestRest.PostSingle do
     assert {:ok, _response} = Rest.post_single(
       :bank,
       Webhook.resource(),
-      %{
-        payload: %{
-          url: "https://webhook.site/test",
-          subscriptions: [
-            "invoice"
-          ]
-        }
+      payload: %{
+        url: "https://webhook.site/test",
+        subscriptions: [
+          "invoice"
+        ]
       }
     )
   end
@@ -909,14 +879,13 @@ defmodule StarkCoreTestRest.PostSingle do
     assert Rest.post_single!(
       :bank,
       Webhook.resource(),
-      %{
-        payload: %{
-          url: "https://webhook.site/test",
-          subscriptions: [
-            "invoice"
-          ]
-        }
-      })
+      payload: %{
+        url: "https://webhook.site/test",
+        subscriptions: [
+          "invoice"
+        ]
+      }
+    )
   end
 
   @tag :post_single
@@ -924,30 +893,28 @@ defmodule StarkCoreTestRest.PostSingle do
     assert {:error, _response} = Rest.post_single(
       :bank,
       Webhook.resource(),
-      %{
-        payload: %{
-          url: "https://site/test",
-          subscriptions: [
-            "invoice"
-          ]
-        }
-      })
+      payload: %{
+        url: "https://site/test",
+        subscriptions: [
+          "invoice"
+        ]
+      }
+    )
   end
 
   @tag :post_single
   test "Should raise error trying to create webhook using post_single!" do
     assert_raise RuntimeError, fn ->
       Rest.post_single!(
-      :bank,
-      Webhook.resource(),
-      %{
+        :bank,
+        Webhook.resource(),
         payload: %{
           url: "https://site/test",
           subscriptions: [
             "invoice"
           ]
         }
-      })
+      )
     end
   end
 end
@@ -961,19 +928,17 @@ defmodule StarkCoreTestRest.DeleteRaw do
     {:ok, created_boleto} = Rest.post(
       :bank,
       Boleto.resource(),
-      %{
-        payload: [%{
-          amount: 15000,
-          taxId: "45.059.493/0001-73",
-          name: "Should create a new Invoice using Rest.post",
-          streetLine1: "Rua Lagoa Panema, 145",
-          streetLine2: "Casa 2",
-          district: "Bela Vista",
-          city: "São Paulo",
-          stateCode: "SP",
-          zipCode: "02051-050"
-        }]
-      }
+      payload: [%{
+        amount: 15000,
+        taxId: "45.059.493/0001-73",
+        name: "Should create a new Invoice using Rest.post",
+        streetLine1: "Rua Lagoa Panema, 145",
+        streetLine2: "Casa 2",
+        district: "Bela Vista",
+        city: "São Paulo",
+        stateCode: "SP",
+        zipCode: "02051-050"
+      }]
     )
 
     {:ok, [boleto: created_boleto |> hd]}
@@ -1027,19 +992,17 @@ defmodule StarkCoreTestRest.Delete do
     {:ok, created_boleto} = Rest.post(
       :bank,
       Boleto.resource(),
-      %{
-        payload: [%{
-          amount: 15000,
-          taxId: "45.059.493/0001-73",
-          name: "Should create a new Invoice using Rest.post",
-          streetLine1: "Rua Lagoa Panema, 145",
-          streetLine2: "Casa 2",
-          district: "Bela Vista",
-          city: "São Paulo",
-          stateCode: "SP",
-          zipCode: "02051-050"
-        }]
-      }
+      payload: [%{
+        amount: 15000,
+        taxId: "45.059.493/0001-73",
+        name: "Should create a new Invoice using Rest.post",
+        streetLine1: "Rua Lagoa Panema, 145",
+        streetLine2: "Casa 2",
+        district: "Bela Vista",
+        city: "São Paulo",
+        stateCode: "SP",
+        zipCode: "02051-050"
+      }]
     )
 
     {:ok, [boleto: created_boleto |> hd]}
@@ -1093,13 +1056,11 @@ defmodule StarkCoreTestRest.PatchId do
     {:ok, created_invoice} = Rest.post(
       :bank,
       Invoice.resource(),
-      %{
-        payload: [%{
-          amount: 15000,
-          taxId: "45.059.493/0001-73",
-          name: "Should create a new Invoice using Rest.post"
-        }]
-      }
+      payload: [%{
+        amount: 15000,
+        taxId: "45.059.493/0001-73",
+        name: "Should create a new Invoice using Rest.post"
+      }]
     )
 
     {:ok, [invoice: created_invoice |> hd]}
@@ -1111,11 +1072,9 @@ defmodule StarkCoreTestRest.PatchId do
       :bank,
       Invoice.resource(),
       state[:invoice].id,
-      %{
-        payload: %{
-          amount: 20000,
-          expiration: 3600
-        }
+      payload: %{
+        amount: 20000,
+        expiration: 3600
       }
     )
   end
@@ -1126,11 +1085,9 @@ defmodule StarkCoreTestRest.PatchId do
       :bank,
       Invoice.resource(),
       state[:invoice].id,
-      %{
-        payload: %{
-          amount: 20000,
-          expiration: 3600
-        }
+      payload: %{
+        amount: 20000,
+        expiration: 3600
       }
     )
   end
@@ -1141,11 +1098,9 @@ defmodule StarkCoreTestRest.PatchId do
       :bank,
       Invoice.resource(),
       "INVALID_ID",
-      %{
-        payload: %{
-          amount: 20000,
-          expiration: 3600
-        }
+      payload: %{
+        amount: 20000,
+        expiration: 3600
       }
     )
   end
@@ -1157,11 +1112,9 @@ defmodule StarkCoreTestRest.PatchId do
         :bank,
         Invoice.resource(),
         "INVALID_ID",
-        %{
-          payload: %{
-            amount: 20000,
-            expiration: 3600
-          }
+        payload: %{
+          amount: 20000,
+          expiration: 3600
         }
       )
     end
@@ -1177,13 +1130,11 @@ defmodule StarkCoreTestRest.PatchRaw do
     {:ok, created_invoice} = Rest.post(
       :bank,
       Invoice.resource(),
-      %{
-        payload: [%{
-          amount: 15000,
-          taxId: "45.059.493/0001-73",
-          name: "Should create a new Invoice using Rest.post"
-        }]
-      }
+      payload: [%{
+        amount: 15000,
+        taxId: "45.059.493/0001-73",
+        name: "Should create a new Invoice using Rest.post"
+      }]
     )
     {:ok, [invoice: created_invoice |> hd]}
   end
@@ -1194,11 +1145,9 @@ defmodule StarkCoreTestRest.PatchRaw do
       :bank,
       "invoice",
       state[:invoice].id,
-      %{
-        payload: %{
-          amount: 20000,
-          expiration: 3600
-        }
+      payload: %{
+        amount: 20000,
+        expiration: 3600
       }
     )
   end
@@ -1209,11 +1158,9 @@ defmodule StarkCoreTestRest.PatchRaw do
       :bank,
       "invoice",
       state[:invoice].id,
-      %{
-        payload: %{
-          amount: 20000,
-          expiration: 3600
-        }
+      payload: %{
+        amount: 20000,
+        expiration: 3600
       }
     )
   end
@@ -1224,12 +1171,10 @@ defmodule StarkCoreTestRest.PatchRaw do
       :bank,
       "invoice",
       "INVALID_ID",
-      [
-        payload: %{
-          amount: 20000,
-          expiration: 3600
-        }
-      ]
+      payload: %{
+        amount: 20000,
+        expiration: 3600
+      }
     )
   end
 
@@ -1240,12 +1185,10 @@ defmodule StarkCoreTestRest.PatchRaw do
         :bank,
         "invoice",
         "INVALID_ID",
-        [
-          payload: %{
-            amount: 20000,
-            expiration: 3600
-          }
-        ]
+        payload: %{
+          amount: 20000,
+          expiration: 3600
+        }
       )
     end
   end
@@ -1261,12 +1204,8 @@ defmodule StarkCoreTestRest.GetSubResource do
     [ok: paid_invoice] = Rest.get_list(
       :bank,
       Invoice.resource(),
-      %{
-        limit: 1,
-        query: %{
-          status: "paid",
-        }
-      }
+      limit: 1,
+      status: "paid"
     )
       |> Enum.take(1)
 
@@ -1351,9 +1290,7 @@ defmodule StarkCoreTestRest.PostSubResource do
     {:ok, %{headers: _headers, content: content, status_code: 200}} = Rest.post_raw(
       :bank,
       "merchant-session",
-      %{
-        payload: merchantSessionJson
-      }
+      payload: merchantSessionJson
     )
 
     {:ok, merchant_session: JSON.decode!(content)["session"]}
@@ -1366,29 +1303,27 @@ defmodule StarkCoreTestRest.PostSubResource do
       "MerchantSession",
       MerchantSessionPurchase.resource(),
       state[:merchant_session]["uuid"],
-      %{
-        payload: %{
-          amount: 180,
-          installmentCount: 12,
-          cardExpiration: "2035-01",
-          cardNumber: "5277696455399733",
-          cardSecurityCode: "123",
-          holderName: "Holder Name",
-          holderEmail: "holdeName@email.com",
-          holderPhone: "11111111111",
-          fundingType: "credit",
-          billingCountryCode: "BRA",
-          billingCity: "São Paulo",
-          billingStateCode: "SP",
-          billingStreetLine1: "Rua do Holder Name, 123",
-          billingStreetLine2: "",
-          billingZipCode: "11111-111",
-          metadata: %{
-              userAgent: "Postman",
-              userIp: "255.255.255.255",
-              language: "pt-BR",
-              timezoneOffset: 3
-          }
+      payload: %{
+        amount: 180,
+        installmentCount: 12,
+        cardExpiration: "2035-01",
+        cardNumber: "5277696455399733",
+        cardSecurityCode: "123",
+        holderName: "Holder Name",
+        holderEmail: "holdeName@email.com",
+        holderPhone: "11111111111",
+        fundingType: "credit",
+        billingCountryCode: "BRA",
+        billingCity: "São Paulo",
+        billingStateCode: "SP",
+        billingStreetLine1: "Rua do Holder Name, 123",
+        billingStreetLine2: "",
+        billingZipCode: "11111-111",
+        metadata: %{
+            userAgent: "Postman",
+            userIp: "255.255.255.255",
+            language: "pt-BR",
+            timezoneOffset: 3
         }
       }
     )
