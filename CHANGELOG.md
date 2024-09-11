@@ -12,7 +12,7 @@ Given a version number MAJOR.MINOR.PATCH, increment:
 - PATCH version when backwards compatible bug **fixes** are implemented.
 
 
-## [Unreleased]
+## [0.1.6] - 2024-09-11
 ### Added
 - Add stark-core basic resources and unit tests
 ### Changed
