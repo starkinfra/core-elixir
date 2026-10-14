@@ -85,6 +85,8 @@ defmodule StarkCore.Utils.API do
         word <> "s"
       word |> String.ends_with?("y") ->
         (word |> String.slice(0..-2//-1)) <> "ies"
+      Enum.any?(["ch", "sh", "x"], &String.ends_with?(word, &1)) ->
+        word <> "es"
       true -> word <> "s"
     end
   end
