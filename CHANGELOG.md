@@ -13,6 +13,8 @@ Given a version number MAJOR.MINOR.PATCH, increment:
 
 
 ## [Unreleased]
+
+## [0.2.0] - 2026-11-27
 ### Added
 - patch_multi and patch_multi! functions, the PATCH counterpart of post, to update several resources in one request
 ### Fixed

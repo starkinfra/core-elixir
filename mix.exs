@@ -5,7 +5,7 @@ defmodule StarkCore.MixProject do
     [
       app: :starkcore,
       name: :starkcore,
-      version: "0.1.6",
+      version: "0.2.0",
       homepage_url: "https://starkinfra.com",
       source_url: "https://github.com/starkinfra/core-elixir",
       description: description(),
