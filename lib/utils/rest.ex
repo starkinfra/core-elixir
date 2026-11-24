@@ -230,6 +230,40 @@ defmodule StarkCore.Utils.Rest do
     end
   end
 
+  def patch_multi(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    user = options[:user]
+
+    case Request.fetch(
+      service,
+      :patch,
+      "#{API.endpoint(resource_name)}",
+      payload: prepare_payload(resource_name, options[:payload]),
+      user: user
+    ) do
+      {:ok, response} -> {:ok, process_response(resource_name, resource_maker, response)}
+      {:error, errors} -> {:error, errors}
+    end
+  end
+
+  def patch_multi!(
+    service,
+    {resource_name, resource_maker},
+    options
+  ) do
+    case patch_multi(
+      service,
+      {resource_name, resource_maker},
+      options
+    ) do
+      {:ok, entities} -> entities
+      {:error, errors} -> raise API.errors_to_string(errors)
+    end
+  end
+
   def post_single(
     service,
     {resource_name, resource_maker},

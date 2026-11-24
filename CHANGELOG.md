@@ -13,6 +13,8 @@ Given a version number MAJOR.MINOR.PATCH, increment:
 
 
 ## [Unreleased]
+### Added
+- patch_multi and patch_multi! functions, the PATCH counterpart of post, to update several resources in one request
 ### Fixed
 - plural of resource names ending in "ch", "sh" or "x", which now take "es" (speech becomes speeches)
 
